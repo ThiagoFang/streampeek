@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: var(--primary);
+  --color-background: var(--background);
+  --color-foreground: var(--background-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+}
+
+@layer base {
+  :root {
+    --primary: #9146ff;
+
+    --background: #0e0e10;
+    --background-foreground: #ffffff;
+
+    --muted: #1c1c21;
+    --muted-foreground: #adafb3;
+
+    --border: #26262c;
+  }
+
+  .dark {
+    --background: #0e0e10;
+    --background-foreground: #ffffff;
+
+    --muted: #1c1c21;
+    --muted-foreground: #adafb3;
+
+    --border: #26262c;
+  }
+}
