@@ -1,43 +1,51 @@
-import { app, BrowserWindow } from "electron";
-import { createRequire } from "node:module";
+import { app, Tray, BrowserWindow, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
-let win;
-function createWindow() {
-  win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+let tray = null;
+let window = null;
+app.whenReady().then(() => {
+  tray = new Tray(path.join(process.env.VITE_PUBLIC, "logo_streampeek.png"));
+  window = new BrowserWindow({
+    width: 300,
+    height: 400,
+    show: false,
+    frame: false,
+    resizable: false,
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs")
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
-  win.webContents.on("did-finish-load", () => {
-    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  window.loadURL("http://localhost:5173");
+  tray.on("click", (_event, bounds) => {
+    if (!window) return;
+    if (window.isVisible()) {
+      window.hide();
+    } else {
+      const { x, y } = bounds;
+      const { width, height } = window.getBounds();
+      if (process.platform === "darwin") {
+        window.setPosition(x - width / 2, y);
+      } else {
+        window.setPosition(x - width / 2, y - height);
+      }
+      window.show();
+    }
   });
-  if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
-  } else {
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
-  }
-}
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-    win = null;
-  }
+  window.on("blur", () => {
+    window == null ? void 0 : window.hide();
+  });
+  const contextMenu = Menu.buildFromTemplate([
+    { label: "Sair", click: () => app.quit() }
+  ]);
+  tray.setContextMenu(contextMenu);
 });
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
-app.whenReady().then(createWindow);
 export {
   MAIN_DIST,
   RENDERER_DIST,
