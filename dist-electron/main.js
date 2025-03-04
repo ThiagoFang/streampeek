@@ -16,7 +16,9 @@ app.whenReady().then(() => {
     height: 400,
     show: false,
     frame: false,
+    alwaysOnTop: true,
     resizable: false,
+    skipTaskbar: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
