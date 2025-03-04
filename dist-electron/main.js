@@ -33,7 +33,7 @@ app.whenReady().then(() => {
       if (process.platform === "darwin") {
         window.setPosition(x - width / 2, y);
       } else {
-        window.setPosition(x - width / 2, y - height);
+        window.setPosition(x - width / 2, y - height - 16);
       }
       window.show();
     }

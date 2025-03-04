@@ -1,21 +1,19 @@
-function App() {
-  return (
-    <div className="w-full gap-8 h-dvh p-4 flex flex-col items-center justify-center">
-      <img src="/logo_streampeek.png" alt="Logo StreamPeek" className="w-6" />
+import { List } from "./components/List";
+import { Auth } from "./components/Auth";
+import { Routes } from "./types/routing";
+import { usePathStore } from "./store/path";
 
-      <div>
-        <h1 className="text-lg/5 font-medium text-center text-foreground">
-          Bem vindo ao <b className="font-bold">StreamPeek</b>
-        </h1>
-        <p className="text-center text-muted-foreground">
-          Acompanhe os seus streamers favoritos
-        </p>
-      </div>
-      <button className="p-2 font-medium rounded-md bg-primary w-full text-background">
-        Entrar com <span className="font-bold">Twitch.tv</span>
-      </button>
-    </div>
-  );
+const pathsMap: Record<Routes, React.FC> = {
+  auth: Auth,
+  home: List,
+  settings: List,
+};
+
+function App() {
+  const path = usePathStore((state) => state.path);
+
+  const Element = pathsMap[path];
+  return <Element />;
 }
 
 export default App;
