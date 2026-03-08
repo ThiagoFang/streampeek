@@ -4,12 +4,17 @@
   "type": "module",
   "scripts": {
     "dev": "bun --hot src/server.ts",
-    "start": "bun src/server.ts"
+    "start": "bun src/server.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@streampeek/shared": "workspace:*",
     "arktype": "^2",
     "hono": "^4",
     "redaxios": "^0.5.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.10",
+    "typescript": "^5.9.3"
   }
 }

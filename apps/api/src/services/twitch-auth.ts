@@ -34,7 +34,7 @@ export const TwitchAuth = {
   },
 
   async getUser(accessToken: string) {
-    const { data } = await axios({
+    const { data } = await axios<{ data: Record<string, unknown>[] }>({
       method: "GET",
       url: "https://api.twitch.tv/helix/users",
       headers: {
