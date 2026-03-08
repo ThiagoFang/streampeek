@@ -12,4 +12,4 @@ if (result instanceof type.errors) {
   console.error("Invalid environment variables:", result.summary)
 }
 
-export const envVariables = result
+export const envVariables = result as typeof envSchema.infer

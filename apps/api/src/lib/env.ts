@@ -7,9 +7,9 @@ const envSchema = type({
 })
 
 const result = envSchema({
-  PORT: process.env.PORT ?? "3000",
-  TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID,
-  TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET,
+  PORT: Bun.env.PORT ?? "3000",
+  TWITCH_CLIENT_ID: Bun.env.TWITCH_CLIENT_ID,
+  TWITCH_CLIENT_SECRET: Bun.env.TWITCH_CLIENT_SECRET,
 })
 
 if (result instanceof type.errors) {
@@ -17,4 +17,4 @@ if (result instanceof type.errors) {
   process.exit(1)
 }
 
-export const envVariables = result
+export const envVariables = result as typeof envSchema.infer
