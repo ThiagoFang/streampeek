@@ -1,4 +1,4 @@
-import { type } from "arktype"
+import { type } from "arktype";
 
 export const AuthSchemas = {
   callbackQuery: type({
@@ -14,4 +14,4 @@ export const AuthSchemas = {
     login: "string",
     display_name: "string",
   }),
-}
+};

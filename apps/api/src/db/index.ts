@@ -1,7 +1,7 @@
-import { Database } from "bun:sqlite"
-import { join } from "path"
+import { Database } from "bun:sqlite";
+import { join } from "path";
 
-export const db = new Database(join(import.meta.dir, "../../streampeek.db"))
+export const db = new Database(join(import.meta.dir, "../../streampeek.db"));
 
 db.exec("PRAGMA journal_mode = WAL");
 

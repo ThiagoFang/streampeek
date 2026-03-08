@@ -9,23 +9,23 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@streampeek/shared": "workspace:*",
+    "@tailwindcss/vite": "^4",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-shell": "^2",
+    "arktype": "^2",
     "react": "^19",
     "react-dom": "^19",
-    "zustand": "^5",
-    "tailwindcss": "^4",
-    "@tailwindcss/vite": "^4",
-    "arktype": "^2",
     "redaxios": "^0.5",
-    "@streampeek/shared": "workspace:*"
+    "tailwindcss": "^4",
+    "zustand": "^5"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4",
     "typescript": "^5",
-    "vite": "^6",
-    "@types/react": "^19",
-    "@types/react-dom": "^19"
+    "vite": "^6"
   }
 }

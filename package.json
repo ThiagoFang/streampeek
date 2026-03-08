@@ -6,6 +6,13 @@
     "dev:desktop": "cd apps/desktop && WEBKIT_DISABLE_DMABUF_RENDERER=1 bun run tauri dev",
     "dev:desktop:windows": "cd apps/desktop && bun run tauri dev",
     "dev:api": "bun --hot apps/api/src/server.ts",
-    "typecheck": "bun --filter '*' typecheck"
+    "typecheck": "bun --filter '*' typecheck",
+    "lint": "bun oxlint apps packages",
+    "format": "bun oxfmt apps packages",
+    "format:check": "bun oxfmt --check apps packages"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0"
   }
 }
