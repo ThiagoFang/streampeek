@@ -7,8 +7,9 @@
     "start": "bun src/server.ts"
   },
   "dependencies": {
-    "hono": "^4",
+    "@streampeek/shared": "workspace:*",
     "arktype": "^2",
-    "@streampeek/shared": "workspace:*"
+    "hono": "^4",
+    "redaxios": "^0.5.1"
   }
 }

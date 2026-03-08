@@ -13,6 +13,11 @@ src-tauri/target
 .env
 *.local
 
+# Database
+*.db
+*.db-shm
+*.db-wal
+
 # Logs
 logs
 *.log
@@ -23,3 +28,6 @@ logs
 .idea
 .DS_Store
 *.sw?
+
+# Claude
+docs

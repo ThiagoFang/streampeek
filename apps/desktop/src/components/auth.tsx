@@ -1,13 +1,41 @@
+import { useEffect, useState } from "react"
 import { open } from "@tauri-apps/plugin-shell"
+import axios from "redaxios"
+import { usePathStore } from "@/store/path"
 
-const CLIENT_ID = import.meta.env.VITE_TWITCH_CLIENT_ID
-const REDIRECT_URI = "http://localhost"
-const AUTH_URL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=user:read:email`
+const API_BASE = "http://localhost:3000"
 
 export function Auth() {
-  const handleConnect = () => {
-    open(AUTH_URL)
+  const [polling, setPolling] = useState(false)
+
+  const handleConnect = async () => {
+    const { data } = await axios<{ url: string }>({
+      method: "GET",
+      baseURL: API_BASE,
+      url: "/auth/twitch",
+    })
+    open(data.url)
+    setPolling(true)
   }
+
+  useEffect(() => {
+    if (!polling) return
+
+    const interval = setInterval(async () => {
+      const { data } = await axios<{ authenticated: boolean }>({
+        method: "GET",
+        baseURL: API_BASE,
+        url: "/auth/status",
+      })
+
+      if (data.authenticated) {
+        clearInterval(interval)
+        usePathStore.getState().setPath("home")
+      }
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [polling])
 
   return (
     <section className="w-full gap-8 h-dvh p-4 flex flex-col items-center justify-center">
@@ -23,9 +51,16 @@ export function Auth() {
       </div>
       <button
         onClick={handleConnect}
+        disabled={polling}
         className="p-2 font-medium rounded-md bg-primary w-full text-background"
       >
-        Entrar com <span className="font-bold">Twitch.tv</span>
+        {polling ? (
+          "Aguardando login..."
+        ) : (
+          <>
+            Entrar com <span className="font-bold">Twitch.tv</span>
+          </>
+        )}
       </button>
     </section>
   )

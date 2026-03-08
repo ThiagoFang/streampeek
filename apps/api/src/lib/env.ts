@@ -6,15 +6,8 @@ const envSchema = type({
   TWITCH_CLIENT_SECRET: "string > 0",
 })
 
-const result = envSchema({
+export const envVariables = envSchema.assert({
   PORT: Bun.env.PORT ?? "3000",
   TWITCH_CLIENT_ID: Bun.env.TWITCH_CLIENT_ID,
   TWITCH_CLIENT_SECRET: Bun.env.TWITCH_CLIENT_SECRET,
 })
-
-if (result instanceof type.errors) {
-  console.error("Invalid environment variables:", result.summary)
-  process.exit(1)
-}
-
-export const envVariables = result as typeof envSchema.infer

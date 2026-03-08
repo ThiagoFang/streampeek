@@ -11,6 +11,7 @@
         "@streampeek/shared": "workspace:*",
         "arktype": "^2",
         "hono": "^4",
+        "redaxios": "^0.5.1",
       },
     },
     "apps/desktop": {
