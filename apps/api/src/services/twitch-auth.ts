@@ -1,7 +1,7 @@
 import axios from "redaxios";
-import { db } from "../db/index";
 import { AuthSchemas } from "../schemas/auth";
 import { envVariables } from "../lib/env";
+import { DbAuthToken } from "../db/queries/auth-token";
 
 const REDIRECT_URI = "http://localhost:3000/auth/twitch/callback";
 
@@ -46,28 +46,25 @@ export const TwitchAuth = {
     return AuthSchemas.twitchUser.assert(data.data[0]);
   },
 
-  saveToken(
+  async saveToken(
     tokenData: typeof AuthSchemas.tokenResponse.infer,
     userData: typeof AuthSchemas.twitchUser.infer,
   ) {
-    db.run("DELETE FROM auth_tokens");
-    db.run(
-      "INSERT INTO auth_tokens (access_token, refresh_token, user_id, user_login, user_display_name) VALUES (?, ?, ?, ?, ?)",
-      [
-        tokenData.access_token,
-        tokenData.refresh_token,
-        userData.id,
-        userData.login,
-        userData.display_name,
-      ],
-    );
+    await DbAuthToken.deleteAll();
+    await DbAuthToken.insert({
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      user_id: userData.id,
+      user_login: userData.login,
+      user_display_name: userData.display_name,
+    });
   },
 
-  getStoredToken() {
-    return db.query("SELECT * FROM auth_tokens LIMIT 1").get() as Record<string, string> | null;
+  async getStoredToken() {
+    return DbAuthToken.getFirst();
   },
 
-  deleteToken() {
-    db.run("DELETE FROM auth_tokens");
+  async deleteToken() {
+    await DbAuthToken.deleteAll();
   },
 };

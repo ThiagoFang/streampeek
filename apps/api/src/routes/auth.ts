@@ -11,18 +11,18 @@ export const auth = new Hono()
     const validated = AuthSchemas.callbackQuery.assert({ code });
     const tokenData = await TwitchAuth.exchangeCode(validated.code);
     const userData = await TwitchAuth.getUser(tokenData.access_token);
-    TwitchAuth.saveToken(tokenData, userData);
+    await TwitchAuth.saveToken(tokenData, userData);
 
     return c.html(
       "<html><body><h1>Login concluído!</h1><p>Pode fechar esta aba.</p></body></html>",
     );
   })
-  .get("/auth/status", (c) => {
-    const token = TwitchAuth.getStoredToken();
+  .get("/auth/status", async (c) => {
+    const token = await TwitchAuth.getStoredToken();
     return c.json({ authenticated: !!token });
   })
-  .get("/auth/me", (c) => {
-    const token = TwitchAuth.getStoredToken();
+  .get("/auth/me", async (c) => {
+    const token = await TwitchAuth.getStoredToken();
     if (!token) return c.json({ error: "UNAUTHORIZED" }, 401);
 
     return c.json({
@@ -31,7 +31,7 @@ export const auth = new Hono()
       user_display_name: token.user_display_name,
     });
   })
-  .post("/auth/logout", (c) => {
-    TwitchAuth.deleteToken();
+  .post("/auth/logout", async (c) => {
+    await TwitchAuth.deleteToken();
     return c.body(null, 204);
   });
