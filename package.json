@@ -1,7 +1,10 @@
 {
   "name": "streampeek",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev:desktop": "cd apps/desktop && WEBKIT_DISABLE_DMABUF_RENDERER=1 bun run tauri dev",
     "dev:desktop:windows": "cd apps/desktop && bun run tauri dev",
@@ -9,7 +12,11 @@
     "typecheck": "bun --filter '*' typecheck",
     "lint": "bun oxlint apps packages",
     "format": "bun oxfmt apps packages",
-    "format:check": "bun oxfmt --check apps packages"
+    "format:check": "bun oxfmt --check apps packages",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:push": "bunx prisma db push",
+    "db:generate": "bunx prisma generate"
   },
   "devDependencies": {
     "oxfmt": "^0.36.0",
