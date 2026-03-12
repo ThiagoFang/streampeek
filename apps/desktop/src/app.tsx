@@ -1,5 +1,5 @@
-import { Auth } from "./components/auth";
-import { StreamerList } from "./components/streamer-list";
+import { Auth } from "./routes/auth";
+import { StreamerList } from "./routes/streamer-list";
 import { usePathStore } from "./store/path";
 
 type Route = "auth" | "home" | "settings";
