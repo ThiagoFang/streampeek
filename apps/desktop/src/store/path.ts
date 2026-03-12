@@ -1,6 +1,5 @@
+import { Route } from "@/navigation";
 import { create } from "zustand";
-
-type Route = "auth" | "home" | "settings";
 
 type PathStore = {
   path: Route;
