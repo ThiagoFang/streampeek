@@ -1,7 +1,9 @@
+import { Root } from "@/components/root";
+
 export function Home() {
   return (
-    <section className="w-full h-dvh p-4 flex flex-col items-center justify-center">
+    <Root className="w-full h-dvh p-4 flex flex-col">
       <p className="text-muted-foreground">Lista de streamers</p>
-    </section>
+    </Root>
   );
 }
