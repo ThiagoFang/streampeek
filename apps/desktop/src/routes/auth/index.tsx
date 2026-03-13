@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-shell";
 import { usePathStore } from "@/store/path";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { userApi } from "@/api/user";
 
 
@@ -13,39 +13,24 @@ export function Auth() {
     mutationFn: userApi.getAuthUrl,
     onSuccess: ({ url }) => {
       open(url);
+      setPolling(true);
     },
   });
 
-  const { mutateAsync: checkAuthStatus } = useMutation({
-    mutationFn: userApi.getAuthStatus,
-    onSuccess: (data) => {
-      if (data.authenticated) {
-        usePathStore.getState().setPath("home");
-      }
-    },
-  });
-
-  const handleConnect = () => {
-    connect();
-    setPolling(true);
-  };
+  const { data } = useQuery({
+    queryKey: ["auth", "status"],
+    enabled: polling,
+    queryFn: userApi.getAuthStatus,
+    refetchInterval: 2000,
+  })
 
   useEffect(() => {
     if (!polling) return;
-
-    const interval = setInterval(async () => {
-      const { data } = await checkAuthStatus();
-
-      if (data.authenticated) {
-        clearInterval(interval);
-
-        setPolling(false);
-        navigate("home");
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [polling]);
+    if (data && data.authenticated) {
+      setPolling(false);
+      navigate("home")
+    };
+  }, [polling, data]);
 
   return (
     <section className="w-full gap-8 h-dvh p-4 flex flex-col items-center justify-center">
@@ -58,7 +43,7 @@ export function Auth() {
         <p className="text-center text-muted-foreground">Acompanhe os seus streamers favoritos</p>
       </div>
       <button
-        onClick={handleConnect}
+        onClick={() => connect()}
         disabled={polling}
         className="p-2 font-medium rounded-md bg-primary w-full text-background"
       >
