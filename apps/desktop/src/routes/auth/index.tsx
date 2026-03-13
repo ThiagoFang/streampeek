@@ -1,20 +1,32 @@
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-shell";
-import axios from "redaxios";
 import { usePathStore } from "@/store/path";
+import { useMutation } from "@tanstack/react-query";
+import { userApi } from "@/api/user";
 
-const API_BASE = "http://localhost:3000";
 
 export function Auth() {
   const [polling, setPolling] = useState(false);
+  const navigate = usePathStore((state) => state.setPath);
 
-  const handleConnect = async () => {
-    const { data } = await axios<{ url: string }>({
-      method: "GET",
-      baseURL: API_BASE,
-      url: "/auth/twitch",
-    });
-    open(data.url);
+  const { mutate: connect } = useMutation({
+    mutationFn: userApi.getAuthUrl,
+    onSuccess: ({ url }) => {
+      open(url);
+    },
+  });
+
+  const { mutateAsync: checkAuthStatus } = useMutation({
+    mutationFn: userApi.getAuthStatus,
+    onSuccess: (data) => {
+      if (data.authenticated) {
+        usePathStore.getState().setPath("home");
+      }
+    },
+  });
+
+  const handleConnect = () => {
+    connect();
     setPolling(true);
   };
 
@@ -22,15 +34,13 @@ export function Auth() {
     if (!polling) return;
 
     const interval = setInterval(async () => {
-      const { data } = await axios<{ authenticated: boolean }>({
-        method: "GET",
-        baseURL: API_BASE,
-        url: "/auth/status",
-      });
+      const { data } = await checkAuthStatus();
 
       if (data.authenticated) {
         clearInterval(interval);
-        usePathStore.getState().setPath("home");
+
+        setPolling(false);
+        navigate("home");
       }
     }, 2000);
 
