@@ -1,7 +1,9 @@
 import { usePathStore } from "@/store/path";
+import { useUserStore } from "@/store/user";
 
 function Header() {
   const navigate = usePathStore((state) => state.setPath);
+  const user = useUserStore((state) => state.user);
 
   function handleOpenHome() {
     navigate("home");
@@ -10,6 +12,8 @@ function Header() {
   function handleOpenSettings() {
     navigate("home");
   }
+
+  if (!user) return null;
 
   return (
     <header className="w-full flex items-center justify-between">
@@ -21,7 +25,7 @@ function Header() {
       />
 
       <div className="size-6 rounded-md bg-primary flex items-center justify-center text-background font-bold cursor-pointer" onClick={handleOpenSettings}>
-        J
+        {user.user_display_name.charAt(0)}
       </div>
     </header>
   );

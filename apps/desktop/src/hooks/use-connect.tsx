@@ -1,6 +1,7 @@
+import { queryKeys } from "@/api/query-keys";
 import { userApi } from "@/api/user";
 import { usePathStore } from "@/store/path";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 const POLLING_INTERVAL = 2000;
@@ -8,6 +9,7 @@ const POLLING_INTERVAL = 2000;
 function useConnect() {
   const [isPolling, setIsPolling] = useState(false);
   const navigate = usePathStore((state) => state.setPath);
+  const queryClient = useQueryClient();
 
   const { mutate: connect } = useMutation({
     mutationFn: userApi.getAuthUrl,
@@ -33,7 +35,13 @@ function useConnect() {
   useEffect(() => {
     if (data?.authenticated) {
       setIsPolling(false);
-      navigate("home");
+      (async () => {
+        await queryClient.prefetchQuery({
+          queryKey: queryKeys.auth.me,
+          queryFn: userApi.getMe,
+        });
+        navigate("home");
+      })();
     }
   }, [data?.authenticated]);
 
