@@ -8,7 +8,7 @@
   "scripts": {
     "dev:desktop": "cd apps/desktop && WEBKIT_DISABLE_DMABUF_RENDERER=1 bun run tauri dev",
     "dev:desktop:windows": "cd apps/desktop && bun run tauri dev",
-    "dev:api": "bun --hot apps/api/src/server.ts",
+    "dev:api": "bun --env-file=apps/api/.env --hot apps/api/src/server.ts",
     "typecheck": "bun --filter '*' typecheck",
     "lint": "bun oxlint apps packages",
     "format": "bun oxfmt apps packages",
