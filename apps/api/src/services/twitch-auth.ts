@@ -3,6 +3,7 @@ import { AuthSchemas } from "../schemas/auth";
 import { envVariables } from "../lib/env";
 import { DbAuthToken } from "../db/queries/auth-token";
 
+const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
 const REDIRECT_URI = "http://localhost:3000/auth/twitch/callback";
 
 export const TwitchAuth = {
@@ -11,7 +12,7 @@ export const TwitchAuth = {
       client_id: envVariables.TWITCH_CLIENT_ID,
       redirect_uri: REDIRECT_URI,
       response_type: "code",
-      scope: "user:read:email",
+      scope: TWITCH_SCOPES.join(" "),
     });
 
     return `https://id.twitch.tv/oauth2/authorize?${params}`;

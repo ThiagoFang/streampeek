@@ -23,6 +23,12 @@ const userApi = {
     });
     return data;
   },
+  logout: async () => {
+    await api({
+      method: "POST",
+      url: "/auth/logout",
+    });
+  },
 };
 
 export { userApi };

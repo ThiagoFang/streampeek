@@ -2,6 +2,7 @@ import { queryKeys } from "@/api/query-keys";
 import { userApi } from "@/api/user";
 import { usePathStore } from "@/store/path";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { open } from "@tauri-apps/plugin-shell";
 import { useEffect, useState } from "react";
 
 const POLLING_INTERVAL = 2000;
