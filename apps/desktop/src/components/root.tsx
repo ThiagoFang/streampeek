@@ -15,7 +15,7 @@ function Root({ children, ...rest }: Props) {
     if (user) {
       setUser(user);
     }
-  }, [user]);
+  }, [user, setUser]);
 
   return (
     <section className="w-full h-dvh p-4 flex flex-col" {...rest}>

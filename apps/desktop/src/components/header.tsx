@@ -2,11 +2,13 @@ import { userApi } from "@/api/user";
 import { usePathStore } from "@/store/path";
 import { useUserStore } from "@/store/user";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 
 function Header() {
   const navigate = usePathStore((state) => state.setPath);
-  const user = useUserStore((state) => state.user);
-  const clearUser = useUserStore((state) => state.clearUser);
+  const { user, clearUser } = useUserStore(
+    useShallow((state) => ({ user: state.user, clearUser: state.clearUser })),
+  );
   const queryClient = useQueryClient();
 
   const { mutate: logout } = useMutation({

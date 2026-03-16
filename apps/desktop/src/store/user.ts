@@ -1,7 +1,7 @@
 import { MeResponse } from "@/types/auth";
 import { create } from "zustand";
 
-type userContent = {
+type UserContent = {
   user: MeResponse | undefined;
 }
 
@@ -10,7 +10,7 @@ type UserAction = {
   clearUser: () => void;
 }
 
-type UserStore = userContent & UserAction;
+type UserStore = UserContent & UserAction;
 
 export const useUserStore = create<UserStore>((set) => ({
   user: undefined,

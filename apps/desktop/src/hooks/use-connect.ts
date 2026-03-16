@@ -24,7 +24,7 @@ function useConnect() {
   });
 
   const { data } = useQuery({
-    queryKey: ["auth", "status"],
+    queryKey: queryKeys.auth.status,
     enabled: isPolling,
     queryFn: userApi.getAuthStatus,
     refetchInterval: (query) => {

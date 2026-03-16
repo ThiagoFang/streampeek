@@ -6,7 +6,7 @@ import { Suspense } from "react";
 
 export function Home() {
   return (
-    <Root className="w-full h-dvh p-4 flex flex-col">
+    <Root>
       <Suspense fallback={<StreamerListSkeleton />}>
         <StreamerList />
       </Suspense>
