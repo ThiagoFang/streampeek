@@ -1,6 +1,7 @@
 import { userApi } from "@/api/user";
 import { useUser } from "@/lib/auth-context";
 import { usePathStore } from "@/store/path";
+import { useSessionStore } from "@/store/session";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function Header() {
@@ -12,6 +13,7 @@ function Header() {
     mutationFn: userApi.logout,
     onSuccess: () => {
       queryClient.clear();
+      useSessionStore.getState().clearSession();
       navigate("auth");
     },
   });

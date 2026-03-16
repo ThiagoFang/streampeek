@@ -14,11 +14,13 @@ datasource db {
 
 model AuthToken {
   id              Int      @id @default(autoincrement())
+  sessionId       String   @unique @map("session_id")
   accessToken     String   @map("access_token")
   refreshToken    String   @map("refresh_token")
-  userId          String   @map("user_id")
+  userId          String   @unique @map("user_id")
   userLogin       String   @map("user_login")
   userDisplayName String   @map("user_display_name")
+  expiresAt       DateTime @map("expires_at")
   createdAt       DateTime @default(now()) @map("created_at")
 
   @@map("auth_tokens")

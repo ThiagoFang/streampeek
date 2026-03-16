@@ -1,5 +1,9 @@
 import { api } from "@/lib/axios";
-import type { AuthUrlResponse, AuthStatusResponse, MeResponse } from "@/types/auth";
+import type {
+  AuthUrlResponse,
+  AuthStatusResponse,
+  MeResponse,
+} from "@/types/auth";
 
 const userApi = {
   getAuthUrl: async () => {
@@ -9,10 +13,10 @@ const userApi = {
     });
     return data;
   },
-  getAuthStatus: async () => {
+  getAuthStatus: async (state: string) => {
     const { data } = await api<AuthStatusResponse>({
       method: "GET",
-      url: "/auth/status",
+      url: `/auth/status?state=${state}`,
     });
     return data;
   },

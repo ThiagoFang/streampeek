@@ -6,11 +6,13 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type AuthToken = {
     id: Generated<number>;
+    session_id: string;
     access_token: string;
     refresh_token: string;
     user_id: string;
     user_login: string;
     user_display_name: string;
+    expires_at: Timestamp;
     created_at: Generated<Timestamp>;
 };
 export type DB = {

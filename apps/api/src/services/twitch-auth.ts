@@ -1,18 +1,40 @@
 import axios from "redaxios";
+import type { Selectable } from "kysely";
 import { AuthSchemas } from "../schemas/auth";
 import { envVariables } from "../lib/env";
 import { DbAuthToken } from "../db/queries/auth-token";
+import type { AuthToken } from "../db/generated/types";
 
 const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
-const REDIRECT_URI = "http://localhost:3000/auth/twitch/callback";
+
+const pendingStates = new Map<string, string | null>();
 
 export const TwitchAuth = {
-  getAuthorizationUrl() {
+  generateState() {
+    const state = crypto.randomUUID();
+    pendingStates.set(state, null);
+    return state;
+  },
+
+  validateState(state: string) {
+    if (!pendingStates.has(state)) return false;
+    return true;
+  },
+
+  claimSession(state: string) {
+    const sessionId = pendingStates.get(state);
+    if (!sessionId) return null;
+    pendingStates.delete(state);
+    return sessionId;
+  },
+
+  getAuthorizationUrl(state: string) {
     const params = new URLSearchParams({
       client_id: envVariables.TWITCH_CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: envVariables.TWITCH_REDIRECT_URI,
       response_type: "code",
       scope: TWITCH_SCOPES.join(" "),
+      state,
     });
 
     return `https://id.twitch.tv/oauth2/authorize?${params}`;
@@ -27,7 +49,7 @@ export const TwitchAuth = {
         client_secret: envVariables.TWITCH_CLIENT_SECRET,
         code,
         grant_type: "authorization_code",
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: envVariables.TWITCH_REDIRECT_URI,
       }),
     });
 
@@ -48,24 +70,56 @@ export const TwitchAuth = {
   },
 
   async saveToken(
+    state: string,
     tokenData: typeof AuthSchemas.tokenResponse.infer,
     userData: typeof AuthSchemas.twitchUser.infer,
   ) {
-    await DbAuthToken.deleteAll();
-    await DbAuthToken.insert({
+    const sessionId = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+
+    await DbAuthToken.upsertByUserId({
+      session_id: sessionId,
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
       user_id: userData.id,
       user_login: userData.login,
       user_display_name: userData.display_name,
+      expires_at: expiresAt,
     });
+
+    pendingStates.set(state, sessionId);
   },
 
-  async getStoredToken() {
-    return DbAuthToken.getFirst();
+  async refreshToken(token: Selectable<AuthToken>) {
+    const { data } = await axios({
+      method: "POST",
+      url: "https://id.twitch.tv/oauth2/token",
+      data: new URLSearchParams({
+        client_id: envVariables.TWITCH_CLIENT_ID,
+        client_secret: envVariables.TWITCH_CLIENT_SECRET,
+        refresh_token: token.refresh_token,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    const validated = AuthSchemas.tokenResponse.assert(data);
+    const expiresAt = new Date(Date.now() + validated.expires_in * 1000);
+
+    await DbAuthToken.updateTokens(token.session_id, {
+      access_token: validated.access_token,
+      refresh_token: validated.refresh_token,
+      expires_at: expiresAt,
+    });
+
+    return {
+      ...token,
+      access_token: validated.access_token,
+      refresh_token: validated.refresh_token,
+      expires_at: expiresAt,
+    };
   },
 
-  async deleteToken() {
-    await DbAuthToken.deleteAll();
+  async deleteToken(sessionId: string) {
+    await DbAuthToken.deleteBySessionId(sessionId);
   },
 };

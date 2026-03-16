@@ -1,6 +1,7 @@
 import { queryKeys } from "@/api/query-keys";
 import { userApi } from "@/api/user";
 import { usePathStore } from "@/store/path";
+import { useSessionStore } from "@/store/session";
 import type { MeResponse } from "@/types/auth";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createContext, useContext, Component, type ReactNode } from "react";
@@ -57,6 +58,7 @@ class AuthErrorBoundaryInner extends Component<
 
   componentDidCatch() {
     this.props.queryClient.clear();
+    useSessionStore.getState().clearSession();
     usePathStore.getState().setPath("auth");
   }
 
