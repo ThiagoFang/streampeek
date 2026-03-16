@@ -1,20 +1,16 @@
 import { userApi } from "@/api/user";
+import { useUser } from "@/lib/auth-context";
 import { usePathStore } from "@/store/path";
-import { useUserStore } from "@/store/user";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useShallow } from "zustand/react/shallow";
 
 function Header() {
   const navigate = usePathStore((state) => state.setPath);
-  const { user, clearUser } = useUserStore(
-    useShallow((state) => ({ user: state.user, clearUser: state.clearUser })),
-  );
+  const user = useUser();
   const queryClient = useQueryClient();
 
   const { mutate: logout } = useMutation({
     mutationFn: userApi.logout,
     onSuccess: () => {
-      clearUser();
       queryClient.clear();
       navigate("auth");
     },
@@ -23,8 +19,6 @@ function Header() {
   function handleOpenHome() {
     navigate("home");
   }
-
-  if (!user) return null;
 
   return (
     <header className="w-full flex items-center justify-between">
@@ -45,4 +39,17 @@ function Header() {
   );
 }
 
-export { Header };
+interface AuthenticatedLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+}
+
+function Layout({ children, ...rest }: AuthenticatedLayoutProps) {
+  return (
+    <section className="w-full h-dvh p-4 flex flex-col" {...rest}>
+      <Header />
+      {children}
+    </section>
+  );
+}
+
+export { Layout };

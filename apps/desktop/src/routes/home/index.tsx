@@ -1,4 +1,4 @@
-import { Root } from "@/components/root";
+import { Layout } from "@/components/authenticated-layout";
 import { useFollowedStreamers } from "@/hooks/use-followed-streamers";
 import { cn } from "@/lib/utils";
 import type { Streamer } from "@streampeek/shared/types/streamer";
@@ -6,11 +6,11 @@ import { Suspense } from "react";
 
 export function Home() {
   return (
-    <Root>
+    <Layout>
       <Suspense fallback={<StreamerListSkeleton />}>
         <StreamerList />
       </Suspense>
-    </Root>
+    </Layout>
   );
 }
 
