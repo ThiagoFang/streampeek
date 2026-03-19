@@ -1,6 +1,7 @@
 import { Layout } from "@/components/authenticated-layout";
 import { useFollowedStreamers } from "@/hooks/use-followed-streamers";
 import { cn } from "@/lib/utils";
+import { Streamer } from "@/types/streamer";
 import { Suspense } from "react";
 
 export function Home() {
@@ -17,11 +18,7 @@ function StreamerList() {
   const { data: streamers } = useFollowedStreamers();
 
   if (streamers.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Nenhum streamer seguido encontrado.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">Nenhum streamer seguido encontrado.</p>;
   }
 
   return (
@@ -33,9 +30,7 @@ function StreamerList() {
   );
 }
 
-function StreamerItem({
-  streamer,
-}: { streamer: Awaited<ReturnType<typeof useFollowedStreamers>>["data"][number] }) {
+function StreamerItem({ streamer }: { streamer: Streamer }) {
   return (
     <li className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors">
       <span
