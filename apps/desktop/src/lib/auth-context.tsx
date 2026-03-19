@@ -1,18 +1,20 @@
-import { queryKeys } from "@/api/query-keys";
-import { userApi } from "@/api/user";
+import { orpc } from "@/lib/orpc";
 import { usePathStore } from "@/store/path";
 import { useSessionStore } from "@/store/session";
-import type { MeResponse } from "@/types/auth";
+import { ORPCError } from "@orpc/client";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createContext, useContext, Component, type ReactNode } from "react";
 
-const AuthContext = createContext<MeResponse | null>(null);
+type User = {
+  user_id: string;
+  user_login: string;
+  user_display_name: string;
+};
+
+const AuthContext = createContext<User | null>(null);
 
 function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: user } = useSuspenseQuery({
-    queryKey: queryKeys.auth.me,
-    queryFn: userApi.getMe,
-  });
+  const { data: user } = useSuspenseQuery(orpc.auth.getMe.queryOptions());
 
   return <AuthContext value={user}>{children}</AuthContext>;
 }
@@ -69,15 +71,7 @@ class AuthErrorBoundaryInner extends Component<
 }
 
 function isAuthError(error: unknown): boolean {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    typeof (error as { status: unknown }).status === "number"
-  ) {
-    return (error as { status: number }).status === 401;
-  }
-  return false;
+  return error instanceof ORPCError && error.code === "UNAUTHORIZED";
 }
 
 export { AuthProvider, AuthErrorBoundary, useUser };

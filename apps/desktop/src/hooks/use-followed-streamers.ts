@@ -1,12 +1,8 @@
-import { queryKeys } from "@/api/query-keys";
-import { streamerApi } from "@/api/streamer";
+import { orpc } from "@/lib/orpc";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 function useFollowedStreamers() {
-  return useSuspenseQuery({
-    queryKey: queryKeys.streamers.followed,
-    queryFn: streamerApi.getFollowed,
-  });
+  return useSuspenseQuery(orpc.streamer.getFollowed.queryOptions());
 }
 
 export { useFollowedStreamers };

@@ -2,6 +2,9 @@
   "name": "@streampeek/api",
   "private": true,
   "type": "module",
+  "exports": {
+    "./rpc/router": "./src/rpc/router.ts"
+  },
   "scripts": {
     "dev": "bun --hot src/server.ts",
     "start": "bun src/server.ts",
@@ -10,8 +13,8 @@
     "db:generate": "bunx prisma generate --config prisma/prisma.config.ts"
   },
   "dependencies": {
+    "@orpc/server": "^1.13.9",
     "@prisma/client": "^7.4.2",
-    "@streampeek/shared": "workspace:*",
     "arktype": "^2",
     "hono": "^4",
     "kysely": "^0.28.11",

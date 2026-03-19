@@ -31,7 +31,7 @@ function AuthButton() {
   const { connect, isPolling } = useConnect();
 
   return (
-    <Button className="w-full cursor-pointer" disabled={isPolling} onClick={() => connect()}>
+    <Button className="w-full cursor-pointer" disabled={isPolling} onClick={() => connect(undefined)}>
       {isPolling ? (
         "Conectando..."
       ) : (

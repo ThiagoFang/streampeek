@@ -1,5 +1,4 @@
-import { queryKeys } from "@/api/query-keys";
-import { userApi } from "@/api/user";
+import { orpc } from "@/lib/orpc";
 import { usePathStore } from "@/store/path";
 import { useSessionStore } from "@/store/session";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,21 +13,21 @@ function useConnect() {
   const setSessionId = useSessionStore((state) => state.setSessionId);
   const queryClient = useQueryClient();
 
-  const { mutate: connect } = useMutation({
-    mutationFn: userApi.getAuthUrl,
-    onSuccess: ({ url, state }) => {
-      setAuthState(state);
-      open(url);
-    },
-    onError: (error) => {
-      console.error("[useConnect]", error);
-    },
-  });
+  const { mutate: connect } = useMutation(
+    orpc.auth.getAuthUrl.mutationOptions({
+      onSuccess: ({ url, state }) => {
+        setAuthState(state);
+        open(url);
+      },
+      onError: (error) => {
+        console.error("[useConnect]", error);
+      },
+    }),
+  );
 
   const { data } = useQuery({
-    queryKey: [...queryKeys.auth.status, authState],
+    ...orpc.auth.getStatus.queryOptions({ input: { state: authState! } }),
     enabled: !!authState,
-    queryFn: () => userApi.getAuthStatus(authState!),
     refetchInterval: (query) => {
       return query.state.data?.authenticated ? false : POLLING_INTERVAL;
     },
@@ -41,10 +40,7 @@ function useConnect() {
     setAuthState(null);
 
     (async () => {
-      await queryClient.prefetchQuery({
-        queryKey: queryKeys.auth.me,
-        queryFn: userApi.getMe,
-      });
+      await queryClient.prefetchQuery(orpc.auth.getMe.queryOptions());
       navigate("home");
     })();
   }, [data?.authenticated]);

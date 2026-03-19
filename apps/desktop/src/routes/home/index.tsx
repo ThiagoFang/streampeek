@@ -1,7 +1,6 @@
 import { Layout } from "@/components/authenticated-layout";
 import { useFollowedStreamers } from "@/hooks/use-followed-streamers";
 import { cn } from "@/lib/utils";
-import type { Streamer } from "@streampeek/shared/types/streamer";
 import { Suspense } from "react";
 
 export function Home() {
@@ -34,7 +33,9 @@ function StreamerList() {
   );
 }
 
-function StreamerItem({ streamer }: { streamer: Streamer }) {
+function StreamerItem({
+  streamer,
+}: { streamer: Awaited<ReturnType<typeof useFollowedStreamers>>["data"][number] }) {
   return (
     <li className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors">
       <span

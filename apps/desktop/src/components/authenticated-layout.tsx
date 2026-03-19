@@ -1,4 +1,4 @@
-import { userApi } from "@/api/user";
+import { orpc } from "@/lib/orpc";
 import { useUser } from "@/lib/auth-context";
 import { usePathStore } from "@/store/path";
 import { useSessionStore } from "@/store/session";
@@ -9,14 +9,15 @@ function Header() {
   const user = useUser();
   const queryClient = useQueryClient();
 
-  const { mutate: logout } = useMutation({
-    mutationFn: userApi.logout,
-    onSuccess: () => {
-      queryClient.clear();
-      useSessionStore.getState().clearSession();
-      navigate("auth");
-    },
-  });
+  const { mutate: logout } = useMutation(
+    orpc.auth.logout.mutationOptions({
+      onSuccess: () => {
+        queryClient.clear();
+        useSessionStore.getState().clearSession();
+        navigate("auth");
+      },
+    }),
+  );
 
   function handleOpenHome() {
     navigate("home");
@@ -33,7 +34,7 @@ function Header() {
 
       <div
         className="size-6 rounded-md bg-primary flex items-center justify-center text-background font-bold cursor-pointer"
-        onClick={() => logout()}
+        onClick={() => logout(undefined)}
       >
         {user.user_display_name.charAt(0)}
       </div>
