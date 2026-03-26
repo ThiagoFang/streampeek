@@ -40,10 +40,7 @@ export const TwitchStreamer = {
   async getStreams(userIds: string[], accessToken: string) {
     if (userIds.length === 0) return {};
 
-    const streams: Record<
-      string,
-      typeof StreamerSchemas.streamsResponse.infer.data[number]
-    > = {};
+    const streams: Record<string, (typeof StreamerSchemas.streamsResponse.infer.data)[number]> = {};
 
     for (let i = 0; i < userIds.length; i += 100) {
       const batch = userIds.slice(i, i + 100);
@@ -66,16 +63,47 @@ export const TwitchStreamer = {
     return streams;
   },
 
+  async getUsers(userIds: string[], accessToken: string) {
+    if (userIds.length === 0) return {};
+
+    const users: Record<string, (typeof StreamerSchemas.usersResponse.infer.data)[number]> = {};
+
+    for (let i = 0; i < userIds.length; i += 100) {
+      const batch = userIds.slice(i, i + 100);
+      const params = new URLSearchParams();
+      for (const id of batch) params.append("id", id);
+
+      const { data } = await axios<unknown>({
+        method: "GET",
+        url: `${HELIX}/users?${params}`,
+        headers: helixHeaders(accessToken),
+      });
+
+      const validated = StreamerSchemas.usersResponse.assert(data);
+
+      for (const user of validated.data) {
+        users[user.id] = user;
+      }
+    }
+
+    return users;
+  },
+
   async getFollowedStreamers(userId: string, accessToken: string) {
     const channels = await this.getFollowedChannels(userId, accessToken);
     const userIds = channels.map((c) => c.broadcaster_id);
-    const streams = await this.getStreams(userIds, accessToken);
+    const [streams, users] = await Promise.all([
+      this.getStreams(userIds, accessToken),
+      this.getUsers(userIds, accessToken),
+    ]);
 
     return channels.map((channel) => {
       const stream = streams[channel.broadcaster_id];
+      const user = users[channel.broadcaster_id];
       return {
         id: channel.broadcaster_id,
         displayName: channel.broadcaster_name,
+        profileImageUrl: user?.profile_image_url ?? "",
         isLive: !!stream,
         viewerCount: stream?.viewer_count ?? 0,
         gameName: stream?.game_name ?? "",

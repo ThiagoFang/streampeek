@@ -23,16 +23,13 @@ app.get("/auth/twitch/callback", async (c) => {
   const state = c.req.query("state");
   const validated = AuthSchemas.callbackQuery.assert({ code, state });
 
-  if (!TwitchAuth.validateState(validated.state))
-    return c.json({ error: "INVALID_STATE" }, 403);
+  if (!TwitchAuth.validateState(validated.state)) return c.json({ error: "INVALID_STATE" }, 403);
 
   const tokenData = await TwitchAuth.exchangeCode(validated.code);
   const userData = await TwitchAuth.getUser(tokenData.access_token);
   await TwitchAuth.saveToken(validated.state, tokenData, userData);
 
-  return c.html(
-    "<html><body><h1>Login concluído!</h1><p>Pode fechar esta aba.</p></body></html>",
-  );
+  return c.html("<html><body><h1>Login concluído!</h1><p>Pode fechar esta aba.</p></body></html>");
 });
 
 // oRPC handler
@@ -49,10 +46,7 @@ app.all("/rpc/*", async (c) => {
 
 app.onError((err, c) => {
   if (err instanceof type.errors) {
-    return c.json(
-      { error: "VALIDATION_ERROR", details: err.summary },
-      400,
-    );
+    return c.json({ error: "VALIDATION_ERROR", details: err.summary }, 400);
   }
 
   if ("status" in err && typeof err.status === "number") {

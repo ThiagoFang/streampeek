@@ -32,23 +32,14 @@ interface ErrorBoundaryState {
 function AuthErrorBoundary({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
-  return (
-    <AuthErrorBoundaryInner queryClient={queryClient}>
-      {children}
-    </AuthErrorBoundaryInner>
-  );
+  return <AuthErrorBoundaryInner queryClient={queryClient}>{children}</AuthErrorBoundaryInner>;
 }
 
 class AuthErrorBoundaryInner extends Component<
   { children: ReactNode; queryClient: ReturnType<typeof useQueryClient> },
   ErrorBoundaryState
 > {
-  constructor(
-    props: {
-      children: ReactNode;
-      queryClient: ReturnType<typeof useQueryClient>;
-    },
-  ) {
+  constructor(props: { children: ReactNode; queryClient: ReturnType<typeof useQueryClient> }) {
     super(props);
     this.state = { hasError: false };
   }

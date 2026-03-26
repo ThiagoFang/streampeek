@@ -11,9 +11,7 @@ export const DbAuthToken = {
       .executeTakeFirst();
   },
 
-  async upsertByUserId(
-    data: Omit<Selectable<AuthToken>, "id" | "created_at">,
-  ) {
+  async upsertByUserId(data: Omit<Selectable<AuthToken>, "id" | "created_at">) {
     await db
       .insertInto("auth_tokens")
       .values(data)
@@ -46,9 +44,6 @@ export const DbAuthToken = {
   },
 
   async deleteBySessionId(sessionId: string) {
-    await db
-      .deleteFrom("auth_tokens")
-      .where("session_id", "=", sessionId)
-      .execute();
+    await db.deleteFrom("auth_tokens").where("session_id", "=", sessionId).execute();
   },
 };

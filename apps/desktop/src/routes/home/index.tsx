@@ -1,8 +1,9 @@
 import { Layout } from "@/components/authenticated-layout";
 import { useFollowedStreamers } from "@/hooks/use-followed-streamers";
-import { cn } from "@/lib/utils";
-import { Streamer } from "@/types/streamer";
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
+import { StreamerListEmpty } from "./home-empty";
+import { StreamerListSkeleton } from "./home-skeleton";
+import { HomeStreamer } from "./home-streamer";
 
 export function Home() {
   return (
@@ -17,47 +18,23 @@ export function Home() {
 function StreamerList() {
   const { data: streamers } = useFollowedStreamers();
 
-  if (streamers.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nenhum streamer seguido encontrado.</p>;
+  const sorted = useMemo(() => {
+    const live = streamers.filter((s) => s.isLive).sort((a, b) => b.viewerCount - a.viewerCount);
+    const offline = streamers
+      .filter((s) => !s.isLive)
+      .sort((a, b) => a.displayName.localeCompare(b.displayName));
+    return [...live, ...offline];
+  }, [streamers]);
+
+  if (sorted.length === 0) {
+    return <StreamerListEmpty />;
   }
 
   return (
-    <ul className="flex flex-col gap-1">
-      {streamers.map((streamer) => (
-        <StreamerItem key={streamer.id} streamer={streamer} />
+    <ul className="flex flex-col gap-2 px-4 pb-4">
+      {sorted.map((streamer) => (
+        <HomeStreamer key={streamer.id} streamer={streamer} />
       ))}
     </ul>
-  );
-}
-
-function StreamerItem({ streamer }: { streamer: Streamer }) {
-  return (
-    <li className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors">
-      <span
-        className={cn(
-          "size-2 rounded-full shrink-0",
-          streamer.isLive ? "bg-green-500" : "bg-muted-foreground/40",
-        )}
-      />
-      <span className="text-sm truncate">{streamer.displayName}</span>
-      {streamer.isLive && (
-        <span className="text-xs text-muted-foreground ml-auto shrink-0">
-          {streamer.viewerCount.toLocaleString()}
-        </span>
-      )}
-    </li>
-  );
-}
-
-function StreamerListSkeleton() {
-  return (
-    <div className="flex flex-col gap-1">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-2 px-2 py-1.5">
-          <div className="size-2 rounded-full bg-muted animate-pulse" />
-          <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-        </div>
-      ))}
-    </div>
   );
 }

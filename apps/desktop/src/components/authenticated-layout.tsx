@@ -1,40 +1,22 @@
-import { orpc } from "@/lib/orpc";
 import { useUser } from "@/lib/auth-context";
 import { usePathStore } from "@/store/path";
-import { useSessionStore } from "@/store/session";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function Header() {
   const navigate = usePathStore((state) => state.setPath);
   const user = useUser();
-  const queryClient = useQueryClient();
-
-  const { mutate: logout } = useMutation(
-    orpc.auth.logout.mutationOptions({
-      onSuccess: () => {
-        queryClient.clear();
-        useSessionStore.getState().clearSession();
-        navigate("auth");
-      },
-    }),
-  );
-
-  function handleOpenHome() {
-    navigate("home");
-  }
 
   return (
-    <header className="w-full flex items-center justify-between">
+    <header className="sticky top-0 z-10 w-full flex items-center justify-between bg-background px-4 py-2">
       <img
         src="/logo_streampeek.png"
         alt="Logo StreamPeek"
         className="w-3.5 cursor-pointer"
-        onClick={handleOpenHome}
+        onClick={() => navigate("home")}
       />
 
       <div
         className="size-6 rounded-md bg-primary flex items-center justify-center text-background font-bold cursor-pointer"
-        onClick={() => logout(undefined)}
+        onClick={() => navigate("settings")}
       >
         {user.user_display_name.charAt(0)}
       </div>
@@ -48,7 +30,7 @@ interface AuthenticatedLayoutProps extends React.HTMLAttributes<HTMLDivElement> 
 
 function Layout({ children, ...rest }: AuthenticatedLayoutProps) {
   return (
-    <section className="w-full h-dvh p-4 flex flex-col" {...rest}>
+    <section className="w-full h-dvh overflow-y-auto flex flex-col gap-2" {...rest}>
       <Header />
       {children}
     </section>

@@ -11,6 +11,12 @@ export const StreamerSchemas = {
       "cursor?": "string",
     }),
   }),
+  usersResponse: type({
+    data: type({
+      id: "string",
+      profile_image_url: "string",
+    }).array(),
+  }),
   streamsResponse: type({
     data: type({
       user_id: "string",

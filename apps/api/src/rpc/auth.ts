@@ -9,13 +9,11 @@ export const authRouter = {
     return { url, state };
   }),
 
-  getStatus: publicProcedure
-    .input(type({ state: "string" }))
-    .handler(({ input }) => {
-      const sessionId = TwitchAuth.claimSession(input.state);
-      if (!sessionId) return { authenticated: false as const };
-      return { authenticated: true as const, session_id: sessionId };
-    }),
+  getStatus: publicProcedure.input(type({ state: "string" })).handler(({ input }) => {
+    const sessionId = TwitchAuth.claimSession(input.state);
+    if (!sessionId) return { authenticated: false as const };
+    return { authenticated: true as const, session_id: sessionId };
+  }),
 
   getMe: protectedProcedure.handler(({ context }) => ({
     user_id: context.token.user_id,

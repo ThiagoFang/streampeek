@@ -1,8 +1,4 @@
-import type {
-  RouterClient,
-  InferRouterInputs,
-  InferRouterOutputs,
-} from "@orpc/server";
+import type { RouterClient, InferRouterInputs, InferRouterOutputs } from "@orpc/server";
 import { authRouter } from "./auth";
 import { streamerRouter } from "./streamer";
 

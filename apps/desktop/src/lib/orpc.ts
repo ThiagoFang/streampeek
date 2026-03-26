@@ -16,5 +16,4 @@ const link = new RPCLink({
 export const client: Router = createORPCClient(link);
 export const orpc = createRouterUtils(client);
 
-
 export type { RouterInputs, RouterOutputs };
