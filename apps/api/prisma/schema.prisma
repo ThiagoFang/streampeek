@@ -25,3 +25,12 @@ model AuthToken {
 
   @@map("auth_tokens")
 }
+
+model UserSettings {
+  id                   Int      @id @default(autoincrement())
+  userId               String   @unique @map("user_id")
+  notificationsEnabled Boolean  @default(true) @map("notifications_enabled")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("user_settings")
+}

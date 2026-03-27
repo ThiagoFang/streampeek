@@ -1,9 +1,11 @@
 import type { RouterClient, InferRouterInputs, InferRouterOutputs } from "@orpc/server";
 import { authRouter } from "./auth";
+import { settingsRouter } from "./settings";
 import { streamerRouter } from "./streamer";
 
 export const router = {
   auth: authRouter,
+  settings: settingsRouter,
   streamer: streamerRouter,
 };
 

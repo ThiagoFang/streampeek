@@ -3,6 +3,10 @@ import { db } from "..";
 import type { AuthToken } from "../generated/types";
 
 export const DbAuthToken = {
+  async getFirst() {
+    return db.selectFrom("auth_tokens as at").selectAll("at").executeTakeFirst();
+  },
+
   async getBySessionId(sessionId: string) {
     return db
       .selectFrom("auth_tokens as at")

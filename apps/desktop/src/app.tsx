@@ -1,4 +1,5 @@
 import { AuthErrorBoundary, AuthProvider } from "@/lib/auth-context";
+import { useStreamEvents } from "@/hooks/use-stream-events";
 import { navigationClient } from "./navigation";
 import { usePathStore } from "./store/path";
 import { Auth } from "./routes/auth";
@@ -21,6 +22,7 @@ export default function App() {
 }
 
 function AuthenticatedApp() {
+  useStreamEvents();
   const path = usePathStore((state) => state.path);
   const Element = navigationClient[path];
   return <Element />;

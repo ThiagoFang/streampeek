@@ -1,4 +1,5 @@
 import { Layout } from "@/components/authenticated-layout";
+import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { orpc } from "@/lib/orpc";
 import { usePathStore } from "@/store/path";
 import { useSessionStore } from "@/store/session";
@@ -38,9 +39,28 @@ function SettingsToggles() {
   return (
     <div className="flex flex-col gap-2">
       <SettingsSectionHeader title="Configurações" />
-      <SettingsToggleItem icon={Bell} label="Permitir Notificações" />
+      <NotificationsToggle />
       <SettingsToggleItem icon={Computer} label="Executar ao iniciar" />
       <SettingsToggleItem icon={Moon} label="Modo Escuro" defaultChecked />
+    </div>
+  );
+}
+
+function NotificationsToggle() {
+  const { notifications_enabled } = useSettings();
+  const { mutate } = useUpdateSettings();
+
+  return (
+    <div className="flex items-center justify-between px-4 py-2">
+      <div className="flex items-center gap-2">
+        <Bell className="size-4" />
+        <span className="text-sm font-medium">Permitir Notificações</span>
+      </div>
+      <Switch
+        checked={notifications_enabled}
+        onCheckedChange={(checked) => mutate({ notifications_enabled: checked })}
+        size="sm"
+      />
     </div>
   );
 }

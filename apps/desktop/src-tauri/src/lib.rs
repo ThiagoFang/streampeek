@@ -2,6 +2,8 @@ use tauri::{tray::TrayIconEvent, Manager};
 
 pub fn run() {
     tauri::Builder::default()
+        // Plugin for sending desktop notifications
+        .plugin(tauri_plugin_notification::init())
         // Plugin that allows opening external URLs and running shell commands from the frontend
         .plugin(tauri_plugin_shell::init())
         // Setup runs once when the app initializes
