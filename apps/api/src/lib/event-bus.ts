@@ -6,15 +6,29 @@ export type StreamEvent = {
 };
 
 export class StreamEventBus {
-  private listeners = new Set<(event: StreamEvent) => void>();
+  private listeners = new Map<string, Set<(event: StreamEvent) => void>>();
 
-  subscribe(listener: (event: StreamEvent) => void) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+  subscribe(userId: string, listener: (event: StreamEvent) => void) {
+    if (!this.listeners.has(userId)) {
+      this.listeners.set(userId, new Set());
+    }
+
+    this.listeners.get(userId)!.add(listener);
+
+    return () => {
+      const set = this.listeners.get(userId);
+      if (!set) return;
+
+      set.delete(listener);
+      if (set.size === 0) this.listeners.delete(userId);
+    };
   }
 
-  emit(event: StreamEvent) {
-    for (const listener of this.listeners) {
+  emit(userId: string, event: StreamEvent) {
+    const set = this.listeners.get(userId);
+    if (!set) return;
+
+    for (const listener of set) {
       listener(event);
     }
   }

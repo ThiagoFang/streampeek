@@ -10,7 +10,7 @@ const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
 const pendingStates = new Map<string, string | null>();
 
 export const TwitchAuth = {
-  onLogout: null as (() => void) | null,
+  onLogout: null as ((userId: string) => void) | null,
 
   generateState() {
     const state = crypto.randomUUID();
@@ -122,7 +122,8 @@ export const TwitchAuth = {
   },
 
   async deleteToken(sessionId: string) {
+    const token = await DbAuthToken.getBySessionId(sessionId);
     await DbAuthToken.deleteBySessionId(sessionId);
-    this.onLogout?.();
+    if (token) this.onLogout?.(token.user_id);
   },
 };

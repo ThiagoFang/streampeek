@@ -47,6 +47,10 @@ export const DbAuthToken = {
       .execute();
   },
 
+  async getAll() {
+    return db.selectFrom("auth_tokens as at").selectAll("at").execute();
+  },
+
   async deleteBySessionId(sessionId: string) {
     await db.deleteFrom("auth_tokens").where("session_id", "=", sessionId).execute();
   },

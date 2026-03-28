@@ -9,7 +9,7 @@ import { TwitchAuth } from "./services/twitch-auth";
 import { AuthSchemas } from "./schemas/auth";
 import { streamEventBus } from "./lib/event-bus";
 import { DbAuthToken } from "./db/queries/auth-token";
-import { StreamPoller } from "./services/stream-poller";
+import { PollerManager } from "./services/stream-poller";
 
 const app = new Hono();
 
@@ -32,25 +32,34 @@ app.get("/auth/twitch/callback", async (c) => {
   const userData = await TwitchAuth.getUser(tokenData.access_token);
   await TwitchAuth.saveToken(validated.state, tokenData, userData);
 
-  poller.start(tokenData.access_token, userData.id);
+  pollerManager.start(tokenData.access_token, userData.id);
 
   return c.html("<html><body><h1>Login concluído!</h1><p>Pode fechar esta aba.</p></body></html>");
 });
 
-app.get("/events", async (c) => {
-  const sessionId = c.req.query("session");
-  if (!sessionId) return c.json({ error: "UNAUTHORIZED" }, 401);
+const activeConnections = new Map<string, () => void>();
 
+app.get("/events", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader?.startsWith("Session ")) return c.json({ error: "UNAUTHORIZED" }, 401);
+
+  const sessionId = authHeader.slice(8);
   const token = await DbAuthToken.getBySessionId(sessionId);
   if (!token) return c.json({ error: "UNAUTHORIZED" }, 401);
 
+  const previousAbort = activeConnections.get(token.user_id);
+  if (previousAbort) previousAbort();
+
   return streamSSE(c, async (stream) => {
-    const unsubscribe = streamEventBus.subscribe((event) => {
+    activeConnections.set(token.user_id, () => stream.abort());
+
+    const unsubscribe = streamEventBus.subscribe(token.user_id, (event) => {
       stream.writeSSE({ data: JSON.stringify(event) });
     });
 
     stream.onAbort(() => {
       unsubscribe();
+      activeConnections.delete(token.user_id);
     });
 
     while (true) {
@@ -83,22 +92,21 @@ app.onError((err, c) => {
   return c.json({ error: "INTERNAL_ERROR" }, 500);
 });
 
-const poller = new StreamPoller(streamEventBus);
+const pollerManager = new PollerManager(streamEventBus);
 
-TwitchAuth.onLogout = () => poller.stop();
+TwitchAuth.onLogout = (userId) => pollerManager.stop(userId);
 
 async function initPoller() {
-  const token = await DbAuthToken.getFirst();
-  if (!token) return;
+  const tokens = await DbAuthToken.getAll();
 
-  if (new Date(token.expires_at) <= new Date()) {
-    const refreshed = await TwitchAuth.refreshToken(token).catch(() => null);
-    if (!refreshed) return;
-    poller.start(refreshed.access_token, refreshed.user_id);
-    return;
+  for (const token of tokens) {
+    if (new Date(token.expires_at) <= new Date()) {
+      const refreshed = await TwitchAuth.refreshToken(token).catch(() => null);
+      if (refreshed) pollerManager.start(refreshed.access_token, refreshed.user_id);
+    } else {
+      pollerManager.start(token.access_token, token.user_id);
+    }
   }
-
-  poller.start(token.access_token, token.user_id);
 }
 
 initPoller();
