@@ -10,6 +10,40 @@ import { useSessionStore } from "@/store/session";
 import { useSettingsStore } from "@/store/settings";
 import { envVariables } from "@/lib/env";
 
+function safeParse(json: string) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+async function handleEvent(
+  event: { type: string; broadcasterUserName?: string },
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  if (event.type === "stream.online") {
+    const enabled = useSettingsStore.getState().notificationsEnabled;
+    if (enabled) {
+      let granted = await isPermissionGranted();
+      if (!granted) {
+        const permission = await requestPermission();
+        granted = permission === "granted";
+      }
+      if (granted) {
+        sendNotification({
+          title: "StreamPeek",
+          body: `${event.broadcasterUserName} acabou de entrar ao vivo!`,
+        });
+      }
+    }
+  }
+
+  queryClient.invalidateQueries({
+    queryKey: orpc.streamer.getFollowed.queryOptions().queryKey,
+  });
+}
+
 export function useStreamEvents() {
   const sessionId = useSessionStore((s) => s.sessionId);
   const queryClient = useQueryClient();
@@ -17,40 +51,56 @@ export function useStreamEvents() {
   useEffect(() => {
     if (!sessionId) return;
 
-    const eventSource = new EventSource(
-      `${envVariables.VITE_API_BASE_URL}/events?session=${sessionId}`,
-    );
+    const controller = new AbortController();
+    let delay = 1000;
 
-    eventSource.onmessage = async (e) => {
-      let event: { type: string; broadcasterUserName?: string };
-      try {
-        event = JSON.parse(e.data);
-      } catch {
-        return;
-      }
+    async function connect() {
+      const response = await fetch(
+        `${envVariables.VITE_API_BASE_URL}/events`,
+        {
+          headers: { Authorization: `Session ${sessionId}` },
+          signal: controller.signal,
+        },
+      );
 
-      if (event.type === "stream.online") {
-        const enabled = useSettingsStore.getState().notificationsEnabled;
-        if (enabled) {
-          let granted = await isPermissionGranted();
-          if (!granted) {
-            const permission = await requestPermission();
-            granted = permission === "granted";
-          }
-          if (granted) {
-            sendNotification({
-              title: "StreamPeek",
-              body: `${event.broadcasterUserName} acabou de entrar ao vivo!`,
-            });
-          }
+      if (!response.ok || !response.body) return;
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop()!;
+
+        for (const line of lines) {
+          const dataMatch = line.match(/^data:\s*(.+)$/m);
+          if (!dataMatch) continue;
+
+          const event = safeParse(dataMatch[1]);
+          if (!event) continue;
+
+          delay = 1000;
+          await handleEvent(event, queryClient);
         }
       }
+    }
 
-      queryClient.invalidateQueries({
-        queryKey: orpc.streamer.getFollowed.queryOptions().queryKey,
-      });
-    };
+    async function connectWithBackoff() {
+      while (!controller.signal.aborted) {
+        await connect().catch(() => {});
+        if (controller.signal.aborted) break;
+        await new Promise((r) => setTimeout(r, delay));
+        delay = Math.min(delay * 2, 30000);
+      }
+    }
 
-    return () => eventSource.close();
+    connectWithBackoff();
+
+    return () => controller.abort();
   }, [sessionId, queryClient]);
 }
