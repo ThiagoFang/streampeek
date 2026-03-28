@@ -9,7 +9,7 @@ import { TwitchAuth } from "./services/twitch-auth";
 import { AuthSchemas } from "./schemas/auth";
 import { streamEventBus } from "./lib/event-bus";
 import { DbAuthToken } from "./db/queries/auth-token";
-import { TwitchEventSub } from "./services/eventsub";
+import { StreamPoller } from "./services/stream-poller";
 
 const app = new Hono();
 
@@ -32,7 +32,7 @@ app.get("/auth/twitch/callback", async (c) => {
   const userData = await TwitchAuth.getUser(tokenData.access_token);
   await TwitchAuth.saveToken(validated.state, tokenData, userData);
 
-  eventsub.connect(tokenData.access_token, envVariables.TWITCH_CLIENT_ID, userData.id);
+  poller.start(tokenData.access_token, userData.id);
 
   return c.html("<html><body><h1>Login concluído!</h1><p>Pode fechar esta aba.</p></body></html>");
 });
@@ -83,25 +83,25 @@ app.onError((err, c) => {
   return c.json({ error: "INTERNAL_ERROR" }, 500);
 });
 
-const eventsub = new TwitchEventSub(streamEventBus);
+const poller = new StreamPoller(streamEventBus);
 
-TwitchAuth.onLogout = () => eventsub.disconnect();
+TwitchAuth.onLogout = () => poller.stop();
 
-async function initEventSub() {
+async function initPoller() {
   const token = await DbAuthToken.getFirst();
   if (!token) return;
 
   if (new Date(token.expires_at) <= new Date()) {
     const refreshed = await TwitchAuth.refreshToken(token).catch(() => null);
     if (!refreshed) return;
-    eventsub.connect(refreshed.access_token, envVariables.TWITCH_CLIENT_ID, refreshed.user_id);
+    poller.start(refreshed.access_token, refreshed.user_id);
     return;
   }
 
-  eventsub.connect(token.access_token, envVariables.TWITCH_CLIENT_ID, token.user_id);
+  poller.start(token.access_token, token.user_id);
 }
 
-initEventSub();
+initPoller();
 
 export default {
   port: envVariables.PORT,
