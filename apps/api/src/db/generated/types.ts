@@ -15,6 +15,13 @@ export type AuthToken = {
     expires_at: Timestamp;
     created_at: Generated<Timestamp>;
 };
+export type NotificationExclusion = {
+    id: Generated<number>;
+    user_id: string;
+    broadcaster_id: string;
+    broadcaster_login: string;
+    broadcaster_name: string;
+};
 export type UserSettings = {
     id: Generated<number>;
     user_id: string;
@@ -23,5 +30,6 @@ export type UserSettings = {
 };
 export type DB = {
     auth_tokens: AuthToken;
+    notification_exclusions: NotificationExclusion;
     user_settings: UserSettings;
 };

@@ -34,3 +34,14 @@ model UserSettings {
 
   @@map("user_settings")
 }
+
+model NotificationExclusion {
+  id               Int    @id @default(autoincrement())
+  userId           String @map("user_id")
+  broadcasterId    String @map("broadcaster_id")
+  broadcasterLogin String @map("broadcaster_login")
+  broadcasterName  String @map("broadcaster_name")
+
+  @@unique([userId, broadcasterId])
+  @@map("notification_exclusions")
+}
