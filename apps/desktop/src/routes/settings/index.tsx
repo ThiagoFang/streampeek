@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Layout } from "@/components/authenticated-layout";
+import { useExclusionList, useRemoveExclusion } from "@/hooks/use-exclusion-list";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { orpc } from "@/lib/orpc";
 import { usePathStore } from "@/store/path";
@@ -7,8 +9,6 @@ import { Switch } from "@/components/ui/switch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, ChevronLeft, Computer, LogOut, Moon, X } from "lucide-react";
 
-const mockExclusionList = ["maethe", "Calango", "asusbrasiltv", "hades", "myhoyobrasil", "takeshi"];
-
 export function Settings() {
   return (
     <Layout>
@@ -16,7 +16,9 @@ export function Settings() {
         <SettingsBackLink />
         <div className="flex flex-1 flex-col gap-4">
           <SettingsToggles />
-          <SettingsExclusionList />
+          <Suspense fallback={<div className="px-4 py-2 text-xs text-muted-foreground">Carregando...</div>}>
+            <SettingsExclusionList />
+          </Suspense>
         </div>
         <SettingsFooter />
       </div>
@@ -94,17 +96,28 @@ function SettingsToggleItem({
 }
 
 function SettingsExclusionList() {
+  const exclusionList = useExclusionList();
+  const { mutate } = useRemoveExclusion();
+
   return (
     <div className="flex flex-col gap-2">
       <SettingsSectionHeader title="Lista de Exclusão" />
-      <div className="flex flex-wrap gap-2">
-        {mockExclusionList.map((name) => (
-          <div key={name} className="flex items-center gap-2 rounded-lg bg-destructive/10 p-2">
-            <X className="size-3 text-destructive" />
-            <span className="text-xs font-medium text-destructive">{name}</span>
-          </div>
-        ))}
-      </div>
+      {exclusionList.length === 0 ? (
+        <span className="px-4 py-2 text-xs text-muted-foreground">Nenhum streamer excluído</span>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {exclusionList.map((item) => (
+            <button
+              key={item.broadcaster_id}
+              className="flex cursor-pointer items-center gap-2 rounded-lg bg-destructive/10 p-2"
+              onClick={() => mutate({ broadcaster_id: item.broadcaster_id })}
+            >
+              <X className="size-3 text-destructive" />
+              <span className="text-xs font-medium text-destructive">{item.broadcaster_name}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
