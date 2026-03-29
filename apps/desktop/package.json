@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
-    "@fontsource/poppins": "^5.2.7",
+    "@fontsource-variable/inter": "^5.2.8",
     "@orpc/client": "^1.13.9",
     "@orpc/tanstack-query": "^1.13.9",
     "@streampeek/api": "workspace:*",
