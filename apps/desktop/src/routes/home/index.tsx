@@ -18,21 +18,24 @@ export function Home() {
 function StreamerList() {
   const { data: streamers } = useFollowedStreamers();
 
-  const sorted = useMemo(() => {
+  const { live, offline } = useMemo(() => {
     const live = streamers.filter((s) => s.isLive).sort((a, b) => b.viewerCount - a.viewerCount);
     const offline = streamers
       .filter((s) => !s.isLive)
       .sort((a, b) => a.displayName.localeCompare(b.displayName));
-    return [...live, ...offline];
+    return { live, offline };
   }, [streamers]);
 
-  if (sorted.length === 0) {
+  if (live.length === 0 && offline.length === 0) {
     return <StreamerListEmpty />;
   }
 
   return (
-    <ul className="flex flex-col gap-2 px-4 pb-4">
-      {sorted.map((streamer) => (
+    <ul className="flex flex-col divide-y divide-border px-3 pb-3">
+      {live.map((streamer) => (
+        <HomeStreamer key={streamer.id} streamer={streamer} />
+      ))}
+      {offline.map((streamer) => (
         <HomeStreamer key={streamer.id} streamer={streamer} />
       ))}
     </ul>

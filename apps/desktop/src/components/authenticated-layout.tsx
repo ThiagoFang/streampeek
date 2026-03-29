@@ -6,7 +6,7 @@ function Header() {
   const user = useUser();
 
   return (
-    <header className="sticky top-0 z-10 w-full flex items-center justify-between bg-background px-4 py-2">
+    <header className="sticky top-0 z-10 w-full flex items-center justify-between bg-background px-3 py-1.5">
       <img
         src="/logo_streampeek.png"
         alt="Logo StreamPeek"

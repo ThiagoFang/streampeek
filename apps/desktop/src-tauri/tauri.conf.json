@@ -13,13 +13,14 @@
     "windows": [
       {
         "title": "StreamPeek",
-        "width": 300,
-        "height": 400,
+        "width": 280,
+        "height": 360,
         "resizable": false,
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "visible": true
+        "visible": true,
+        "transparent": true
       }
     ],
     "trayIcon": {
