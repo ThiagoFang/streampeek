@@ -86,6 +86,7 @@ export const TwitchAuth = {
       user_id: userData.id,
       user_login: userData.login,
       user_display_name: userData.display_name,
+      profile_image_url: userData.profile_image_url,
       expires_at: expiresAt,
     });
 

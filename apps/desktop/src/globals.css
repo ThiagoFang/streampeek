@@ -1,3 +1,4 @@
+@import "@fontsource/poppins";
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,10 +7,11 @@
 
 @layer base {
   :root {
-    --primary: #9146ff;
+    --primary: #9146FF;
+    --primary-darker: #4900B3;
     --primary-foreground: #ffffff;
 
-    --background: #0e0e10;
+    --background: #09090A;
     --foreground: #ffffff;
 
     --secondary: #1c1c21;
@@ -18,12 +20,15 @@
     --muted: #1c1c21;
     --muted-foreground: #adafb3;
 
-    --accent: #1c1c21;
+    --card: #131315;
+    --card-foreground: #ffffff;
+
+    --accent: #2A2A2C;
     --accent-foreground: #ffffff;
 
     --destructive: #ef4444;
 
-    --border: #26262c;
+    --border: #201F22;
     --input: #26262c;
     --ring: #9146ff;
 
@@ -32,12 +37,14 @@
 
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: none;
   }
   html {
-    @apply overflow-hidden rounded-xl;
+    @apply overflow-hidden;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-hidden rounded-[4px];
+    font-family: 'Poppins', sans-serif;
   }
 }
 
@@ -45,11 +52,14 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-primary-darker: var(--primary-darker);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);

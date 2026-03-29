@@ -20,7 +20,7 @@
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "visible": true,
-        "transparent": true
+        "transparent": false
       }
     ],
     "trayIcon": {

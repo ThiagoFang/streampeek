@@ -26,6 +26,7 @@ export const DbAuthToken = {
           refresh_token: data.refresh_token,
           user_login: data.user_login,
           user_display_name: data.user_display_name,
+          profile_image_url: data.profile_image_url,
           expires_at: data.expires_at,
         }),
       )

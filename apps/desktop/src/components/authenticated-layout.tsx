@@ -6,20 +6,20 @@ function Header() {
   const user = useUser();
 
   return (
-    <header className="sticky top-0 z-10 w-full flex items-center justify-between bg-background px-3 py-1.5">
+    <header className="sticky top-0 z-10 w-full flex items-center justify-between bg-background p-2 border-b border-border">
       <img
         src="/logo_streampeek.png"
         alt="Logo StreamPeek"
-        className="w-3.5 cursor-pointer"
+        className="w-3 cursor-pointer"
         onClick={() => navigate("home")}
       />
 
-      <div
-        className="size-6 rounded-md bg-primary flex items-center justify-center text-background font-bold cursor-pointer"
+      <img
+        src={user.profile_image_url}
+        alt={user.user_display_name}
+        className="size-[18px] rounded-[4px] cursor-pointer object-cover"
         onClick={() => navigate("settings")}
-      >
-        {user.user_display_name.charAt(0)}
-      </div>
+      />
     </header>
   );
 }
@@ -30,7 +30,7 @@ interface AuthenticatedLayoutProps extends React.HTMLAttributes<HTMLDivElement> 
 
 function Layout({ children, ...rest }: AuthenticatedLayoutProps) {
   return (
-    <section className="w-full h-dvh overflow-y-auto flex flex-col gap-2" {...rest}>
+    <section className="w-full h-dvh overflow-y-auto flex flex-col" {...rest}>
       <Header />
       {children}
     </section>

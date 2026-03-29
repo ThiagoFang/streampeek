@@ -19,6 +19,7 @@ export const authRouter = {
     user_id: context.token.user_id,
     user_login: context.token.user_login,
     user_display_name: context.token.user_display_name,
+    profile_image_url: context.token.profile_image_url,
   })),
 
   logout: protectedProcedure.handler(({ context }) =>

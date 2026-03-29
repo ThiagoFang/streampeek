@@ -20,6 +20,7 @@ model AuthToken {
   userId          String   @unique @map("user_id")
   userLogin       String   @map("user_login")
   userDisplayName String   @map("user_display_name")
+  profileImageUrl String   @map("profile_image_url")
   expiresAt       DateTime @map("expires_at")
   createdAt       DateTime @default(now()) @map("created_at")
 

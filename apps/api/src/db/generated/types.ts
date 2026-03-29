@@ -12,6 +12,7 @@ export type AuthToken = {
     user_id: string;
     user_login: string;
     user_display_name: string;
+    profile_image_url: string;
     expires_at: Timestamp;
     created_at: Generated<Timestamp>;
 };

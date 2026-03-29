@@ -12,6 +12,8 @@ pub fn run() {
             let tray = app.tray_by_id("main").expect("tray not found");
             let win = app.get_webview_window("main").unwrap();
 
+            let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize::new(280.0, 360.0)));
+
             // Register handler for tray icon events
             tray.on_tray_icon_event(move |_tray, event| {
                 // Only react to clicks (ignores hover, double click, etc)

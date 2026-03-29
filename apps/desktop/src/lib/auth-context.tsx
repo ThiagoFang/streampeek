@@ -9,6 +9,7 @@ type User = {
   user_id: string;
   user_login: string;
   user_display_name: string;
+  profile_image_url: string;
 };
 
 const AuthContext = createContext<User | null>(null);
