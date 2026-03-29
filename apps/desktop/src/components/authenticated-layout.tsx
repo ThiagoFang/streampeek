@@ -6,7 +6,10 @@ function Header() {
   const user = useUser();
 
   return (
-    <header className="sticky top-0 z-10 w-full flex items-center justify-between bg-background p-2 border-b border-border">
+    <header
+      className="sticky top-0 z-10 w-full flex items-center justify-between bg-background p-2 border-b border-border"
+      data-tauri-drag-region=""
+    >
       <img
         src="/logo_streampeek.png"
         alt="Logo StreamPeek"
