@@ -7,6 +7,8 @@ import { router } from "./rpc/router";
 import { checkRateLimit, getClientKey } from "./lib/rate-limit";
 import { handleAuthCallback } from "./routes/auth-callback";
 import { handleEvents } from "./routes/events";
+import { handleHealth } from "./routes/health";
+import { rateLimitMiddleware } from "./middleware/rate-limit";
 import { initializeApp } from "./bootstrap";
 
 const app = new Hono();
@@ -19,9 +21,11 @@ app.use(
   }),
 );
 
-app.get("/auth/twitch/callback", handleAuthCallback);
+app.get("/auth/twitch/callback", rateLimitMiddleware(), handleAuthCallback);
 
-app.get("/events", handleEvents);
+app.get("/events", rateLimitMiddleware(), handleEvents);
+
+app.get("/health", handleHealth);
 
 const rpcHandler = new RPCHandler(router);
 

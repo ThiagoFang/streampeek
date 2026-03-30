@@ -92,7 +92,12 @@ class PollProcessor {
     await pollQueue.add(
       "poll",
       { userId: token.user_id, sessionId },
-      { delay: POLL_INTERVAL, jobId: `poll-${sessionId}` },
+      {
+        delay: POLL_INTERVAL,
+        jobId: `poll-${sessionId}`,
+        attempts: 3,
+        backoff: { type: "exponential", delay: 1000 },
+      },
     );
   }
 }
@@ -117,7 +122,12 @@ export const scheduleUserPoll = async (sessionId: string) => {
   await pollQueue.add(
     "poll",
     { userId: token.user_id, sessionId },
-    { delay: 5000, jobId: `poll-${sessionId}` },
+    {
+      delay: 5000,
+      jobId: `poll-${sessionId}`,
+      attempts: 3,
+      backoff: { type: "exponential", delay: 1000 },
+    },
   );
 };
 
