@@ -16,7 +16,9 @@
     "@orpc/server": "^1.13.9",
     "@prisma/client": "^7.4.2",
     "arktype": "^2",
+    "bullmq": "^5.28.2",
     "hono": "^4",
+    "ioredis": "^5.4.2",
     "kysely": "^0.28.11",
     "pg": "^8.20.0",
     "redaxios": "^0.5.1"

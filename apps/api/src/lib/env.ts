@@ -7,6 +7,7 @@ const envSchema = type({
   TWITCH_REDIRECT_URI: "string > 0",
   DATABASE_URL: "string > 0",
   CORS_ORIGIN: "string > 0",
+  REDIS_URL: "string > 0",
 });
 
 export const envVariables = envSchema.assert({
@@ -16,4 +17,5 @@ export const envVariables = envSchema.assert({
   TWITCH_REDIRECT_URI: Bun.env.TWITCH_REDIRECT_URI ?? "http://localhost:3000/auth/twitch/callback",
   DATABASE_URL: Bun.env.DATABASE_URL,
   CORS_ORIGIN: Bun.env.CORS_ORIGIN ?? "http://localhost:1420",
+  REDIS_URL: Bun.env.REDIS_URL ?? "redis://localhost:6379",
 });

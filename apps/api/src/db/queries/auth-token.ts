@@ -15,6 +15,14 @@ export const DbAuthToken = {
       .executeTakeFirst();
   },
 
+  async getByUserId(userId: string) {
+    return db
+      .selectFrom("auth_tokens as at")
+      .where("at.user_id", "=", userId)
+      .selectAll("at")
+      .executeTakeFirst();
+  },
+
   async upsertByUserId(data: Omit<Selectable<AuthToken>, "id" | "created_at">) {
     await db
       .insertInto("auth_tokens")

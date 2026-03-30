@@ -2,31 +2,32 @@ import axios from "redaxios";
 import type { Selectable } from "kysely";
 import { AuthSchemas } from "../schemas/auth";
 import { envVariables } from "../lib/env";
+import { redis } from "../lib/redis";
 import { DbAuthToken } from "../db/queries/auth-token";
 import type { AuthToken } from "../db/generated/types";
 
 const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
 
-const pendingStates = new Map<string, string | null>();
+const PENDING_STATE_TTL = 600;
 
 export const TwitchAuth = {
   onLogout: null as ((userId: string) => void) | null,
 
-  generateState() {
+  async generateState() {
     const state = crypto.randomUUID();
-    pendingStates.set(state, null);
+    await redis.setex(`auth:pending:${state}`, PENDING_STATE_TTL, "");
     return state;
   },
 
-  validateState(state: string) {
-    if (!pendingStates.has(state)) return false;
-    return true;
+  async validateState(state: string) {
+    const exists = await redis.exists(`auth:pending:${state}`);
+    return exists === 1;
   },
 
-  claimSession(state: string) {
-    const sessionId = pendingStates.get(state);
+  async claimSession(state: string) {
+    const sessionId = await redis.get(`auth:pending:${state}`);
     if (!sessionId) return null;
-    pendingStates.delete(state);
+    await redis.del(`auth:pending:${state}`);
     return sessionId;
   },
 
@@ -90,7 +91,7 @@ export const TwitchAuth = {
       expires_at: expiresAt,
     });
 
-    pendingStates.set(state, sessionId);
+    await redis.set(`auth:pending:${state}`, sessionId, "EX", PENDING_STATE_TTL);
   },
 
   async refreshToken(token: Selectable<AuthToken>) {
