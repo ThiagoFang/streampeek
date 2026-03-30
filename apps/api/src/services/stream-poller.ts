@@ -4,7 +4,7 @@ import { TwitchAuth } from "./twitch-auth";
 import { DbAuthToken } from "../db/queries/auth-token";
 import { DbNotificationExclusion } from "../db/queries/notification-exclusion";
 
-type ChannelInfo = { login: string; name: string };
+type ChannelInfo = { login: string; name: string; gameName: string };
 
 const POLL_INTERVAL = 120_000;
 
@@ -58,6 +58,7 @@ export class StreamPoller {
         currentLiveSet.set(channel.broadcaster_id, {
           login: channel.broadcaster_login,
           name: channel.broadcaster_name,
+          gameName: streams[channel.broadcaster_id].game_name ?? "",
         });
       }
     }
@@ -80,6 +81,7 @@ export class StreamPoller {
         broadcasterUserId: id,
         broadcasterUserLogin: info.login,
         broadcasterUserName: info.name,
+        gameName: info.gameName,
       });
     }
 
@@ -90,6 +92,7 @@ export class StreamPoller {
           broadcasterUserId: id,
           broadcasterUserLogin: info.login,
           broadcasterUserName: info.name,
+          gameName: info.gameName,
         });
       }
     }

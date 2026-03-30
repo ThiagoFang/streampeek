@@ -3,6 +3,7 @@ export type StreamEvent = {
   broadcasterUserId: string;
   broadcasterUserLogin: string;
   broadcasterUserName: string;
+  gameName: string;
 };
 
 export class StreamEventBus {

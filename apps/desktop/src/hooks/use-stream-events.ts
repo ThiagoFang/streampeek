@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  sendNotification,
   isPermissionGranted,
   requestPermission,
+  onAction,
 } from "@tauri-apps/plugin-notification";
+import { notify } from "@/lib/notify";
+import { open } from "@tauri-apps/plugin-shell";
 import { orpc } from "@/lib/orpc";
 import { useSessionStore } from "@/store/session";
 import { useSettingsStore } from "@/store/settings";
@@ -19,7 +21,12 @@ function safeParse(json: string) {
 }
 
 async function handleEvent(
-  event: { type: string; broadcasterUserName?: string },
+  event: {
+    type: string;
+    broadcasterUserName?: string;
+    broadcasterUserLogin?: string;
+    gameName?: string;
+  },
   queryClient: ReturnType<typeof useQueryClient>,
 ) {
   if (event.type === "stream.online") {
@@ -31,9 +38,13 @@ async function handleEvent(
         granted = permission === "granted";
       }
       if (granted) {
-        sendNotification({
-          title: "StreamPeek",
-          body: `${event.broadcasterUserName} acabou de entrar ao vivo!`,
+        const body = event.gameName
+          ? `Entrou ao vivo — ${event.gameName}`
+          : "Entrou ao vivo!";
+        notify({
+          title: event.broadcasterUserName ?? "StreamPeek",
+          body,
+          extra: { login: event.broadcasterUserLogin ?? "" },
         });
       }
     }
@@ -101,6 +112,14 @@ export function useStreamEvents() {
 
     connectWithBackoff();
 
-    return () => controller.abort();
+    const actionCleanup = onAction((notification) => {
+      const login = (notification.extra as Record<string, string>)?.login;
+      if (login) open(`https://twitch.tv/${login}`);
+    });
+
+    return () => {
+      controller.abort();
+      actionCleanup.then((listener) => listener.unregister());
+    };
   }, [sessionId, queryClient]);
 }
