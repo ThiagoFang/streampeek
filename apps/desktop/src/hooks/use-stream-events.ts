@@ -6,19 +6,12 @@ import {
   onAction,
 } from "@tauri-apps/plugin-notification";
 import { notify } from "@/lib/notify";
-import { open } from "@tauri-apps/plugin-shell";
+import { safeParse } from "@/lib/parse";
+import { openTwitchChannel } from "@/lib/twitch";
 import { orpc } from "@/lib/orpc";
 import { useSessionStore } from "@/store/session";
 import { useSettingsStore } from "@/store/settings";
 import { envVariables } from "@/lib/env";
-
-function safeParse(json: string) {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
 
 async function handleEvent(
   event: {
@@ -114,7 +107,7 @@ export function useStreamEvents() {
 
     const actionCleanup = onAction((notification) => {
       const login = (notification.extra as Record<string, string>)?.login;
-      if (login) open(`https://twitch.tv/${login}`);
+      if (login) openTwitchChannel(login);
     });
 
     return () => {

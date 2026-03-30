@@ -1,8 +1,8 @@
 import { Layout } from "@/components/authenticated-layout";
 import { StatusDot } from "@/components/ui/status-dot";
-import { useFollowedStreamers } from "@/hooks/use-followed-streamers";
+import { useSortedStreamers } from "@/hooks/use-sorted-streamers";
 import { Streamer } from "@/types/streamer";
-import { Suspense, useMemo } from "react";
+import { Suspense } from "react";
 import { StreamerListEmpty } from "./home-empty";
 import { StreamerListSkeleton } from "./home-skeleton";
 import { HomeStreamerOffline, HomeStreamerOnline } from "./home-streamer";
@@ -18,15 +18,7 @@ export function Home() {
 }
 
 function StreamerList() {
-  const { data: streamers } = useFollowedStreamers();
-
-  const { live, offline } = useMemo(() => {
-    const live = streamers.filter((s) => s.isLive).sort((a, b) => b.viewerCount - a.viewerCount);
-    const offline = streamers
-      .filter((s) => !s.isLive)
-      .sort((a, b) => a.displayName.localeCompare(b.displayName));
-    return { live, offline };
-  }, [streamers]);
+  const { live, offline } = useSortedStreamers();
 
   if (live.length === 0 && offline.length === 0) {
     return <StreamerListEmpty />;

@@ -1,4 +1,4 @@
-import { AuthErrorBoundary, AuthProvider } from "@/lib/auth-context";
+import { AuthErrorBoundary, AuthProvider } from "@/lib/auth";
 import { useStreamEvents } from "@/hooks/use-stream-events";
 import { navigationClient } from "./navigation";
 import { usePathStore } from "./store/path";

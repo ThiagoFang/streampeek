@@ -1,14 +1,12 @@
 import { Suspense, useEffect, useState } from "react";
 import { Layout } from "@/components/authenticated-layout";
 import { useExclusionList, useRemoveExclusion } from "@/hooks/use-exclusion-list";
+import { useLogout } from "@/hooks/use-logout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
-import { orpc } from "@/lib/orpc";
-import { usePathStore } from "@/store/path";
-import { useSessionStore } from "@/store/session";
+import { toggleAutostart } from "@/lib/tauri";
 import { Switch } from "@/components/ui/switch";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { isEnabled, enable, disable } from "@tauri-apps/plugin-autostart";
+import { isEnabled } from "@tauri-apps/plugin-autostart";
 import { Bell, Computer, LogOut, X } from "lucide-react";
 
 export function Settings() {
@@ -74,11 +72,7 @@ function AutostartToggle() {
   }, []);
 
   const handleChange = async (checked: boolean) => {
-    if (checked) {
-      await enable();
-    } else {
-      await disable();
-    }
+    await toggleAutostart(checked);
     setEnabled(checked);
   };
 
@@ -121,18 +115,7 @@ function SettingsExclusionList() {
 }
 
 function SettingsFooter() {
-  const navigate = usePathStore((state) => state.setPath);
-  const queryClient = useQueryClient();
-
-  const { mutate: logout } = useMutation(
-    orpc.auth.logout.mutationOptions({
-      onSuccess: () => {
-        queryClient.clear();
-        useSessionStore.getState().clearSession();
-        navigate("auth");
-      },
-    }),
-  );
+  const { mutate: logout } = useLogout();
 
   return (
     <div className="flex flex-col">

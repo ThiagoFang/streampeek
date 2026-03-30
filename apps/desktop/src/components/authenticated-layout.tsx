@@ -1,4 +1,4 @@
-import { useUser } from "@/lib/auth-context";
+import { useUser } from "@/lib/auth";
 import { usePathStore } from "@/store/path";
 
 function Header() {

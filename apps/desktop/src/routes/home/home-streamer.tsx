@@ -1,7 +1,7 @@
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatViewerCount } from "@/lib/format";
+import { openTwitchChannel } from "@/lib/twitch";
 import { Streamer } from "@/types/streamer";
-import { open } from "@tauri-apps/plugin-shell";
 import { User } from "lucide-react";
 
 interface HomeStreamerProps {
@@ -9,7 +9,7 @@ interface HomeStreamerProps {
 }
 
 function HomeStreamerOnline({ streamer }: HomeStreamerProps) {
-  const handleClick = () => open(`https://twitch.tv/${streamer.displayName.toLowerCase()}`);
+  const handleClick = () => openTwitchChannel(streamer.displayName.toLowerCase());
 
   return (
     <li
@@ -59,7 +59,7 @@ function HomeStreamerOnlineAvatar({ streamer }: HomeStreamerProps) {
 }
 
 function HomeStreamerOffline({ streamer }: HomeStreamerProps) {
-  const handleClick = () => open(`https://twitch.tv/${streamer.displayName.toLowerCase()}`);
+  const handleClick = () => openTwitchChannel(streamer.displayName.toLowerCase());
 
   return (
     <li
