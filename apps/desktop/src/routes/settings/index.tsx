@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Layout } from "@/components/authenticated-layout";
 import { useExclusionList, useRemoveExclusion } from "@/hooks/use-exclusion-list";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
@@ -8,7 +8,8 @@ import { useSessionStore } from "@/store/session";
 import { Switch } from "@/components/ui/switch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Bell, Computer, LogOut, Moon, X } from "lucide-react";
+import { isEnabled, enable, disable } from "@tauri-apps/plugin-autostart";
+import { Bell, Computer, LogOut, X } from "lucide-react";
 
 export function Settings() {
   return (
@@ -33,8 +34,7 @@ function SettingsToggles() {
     <div className="flex flex-col gap-2">
       <SettingsSectionHeader title="Configurações Gerais" />
       <NotificationsToggle />
-      <SettingsToggleItem icon={Computer} label="Executar ao iniciar" />
-      <SettingsToggleItem icon={Moon} label="Modo Escuro" defaultChecked />
+      <AutostartToggle />
     </div>
   );
 }
@@ -66,22 +66,29 @@ function SettingsSectionHeader({ title }: { title: string }) {
   );
 }
 
-function SettingsToggleItem({
-  icon: Icon,
-  label,
-  defaultChecked = false,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  defaultChecked?: boolean;
-}) {
+function AutostartToggle() {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    isEnabled().then(setEnabled);
+  }, []);
+
+  const handleChange = async (checked: boolean) => {
+    if (checked) {
+      await enable();
+    } else {
+      await disable();
+    }
+    setEnabled(checked);
+  };
+
   return (
     <div className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors hover:bg-accent">
       <div className="flex items-center gap-2">
-        <Icon className="size-4" />
-        <span className="text-[12px] font-medium">{label}</span>
+        <Computer className="size-4" />
+        <span className="text-[12px] font-medium">Executar ao iniciar</span>
       </div>
-      <Switch defaultChecked={defaultChecked} size="sm" />
+      <Switch checked={enabled} onCheckedChange={handleChange} size="sm" />
     </div>
   );
 }

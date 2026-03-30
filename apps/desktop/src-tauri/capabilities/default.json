@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-close", "shell:allow-open", "notification:default"]
+  "permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-close", "shell:allow-open", "notification:default", "autostart:default"]
 }

@@ -6,6 +6,11 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         // Plugin that allows opening external URLs and running shell commands from the frontend
         .plugin(tauri_plugin_shell::init())
+        // Plugin for managing OS-level autostart on login
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         // Setup runs once when the app initializes
         .setup(|app| {
             // Get the tray icon configured in tauri.conf.json with id "main"
