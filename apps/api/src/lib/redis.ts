@@ -1,19 +1,22 @@
 import Redis from "ioredis";
 import { envVariables } from "./env";
+import { createLogger } from "./logger";
+
+const logger = createLogger({ component: "redis" });
 
 export const redis = new Redis(envVariables.REDIS_URL);
 export const redisSub = new Redis(envVariables.REDIS_URL);
 
 redis.on("error", (err) => {
-  console.error("[Redis] Connection error:", err);
+  logger.error({ err }, "Redis connection error");
 });
 
 redis.on("connect", () => {
-  console.log("[Redis] Connected");
+  logger.info("Redis connected");
 });
 
 redisSub.on("error", (err) => {
-  console.error("[RedisSub] Connection error:", err);
+  logger.error({ err }, "RedisSub connection error");
 });
 
 export async function subscribe(channel: string, handler: (message: string) => void) {

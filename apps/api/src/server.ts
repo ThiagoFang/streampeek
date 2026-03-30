@@ -10,6 +10,7 @@ import { handleEvents } from "./routes/events";
 import { handleHealth } from "./routes/health";
 import { rateLimitMiddleware } from "./middleware/rate-limit";
 import { initializeApp } from "./bootstrap";
+import { log } from "./lib/logger";
 
 const app = new Hono();
 
@@ -52,7 +53,7 @@ app.onError((err, c) => {
     return c.json({ error: "EXTERNAL_API_ERROR" }, 502);
   }
 
-  console.error(err);
+  log.error({ err }, "Unhandled error in server");
   return c.json({ error: "INTERNAL_ERROR" }, 500);
 });
 

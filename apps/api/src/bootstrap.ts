@@ -4,6 +4,7 @@ import { getConnectionManager } from "./services/connection-manager";
 import { TwitchAuth } from "./services/twitch-auth";
 import { DbAuthToken } from "./db/queries/auth-token";
 import { removeUserPoll } from "./services/poll-worker";
+import { log } from "./lib/logger";
 
 export async function initializeApp() {
   createPollWorker();
@@ -22,7 +23,7 @@ export async function initializeApp() {
 
   startCleanupJob();
 
-  console.log("[Bootstrap] Application initialized");
+  log.info({}, "Application initialized");
 }
 
 async function scheduleExistingPolls() {
@@ -31,5 +32,5 @@ async function scheduleExistingPolls() {
     const { scheduleUserPoll } = await import("./services/poll-worker");
     await scheduleUserPoll(token.session_id);
   }
-  console.log(`[Bootstrap] Scheduled ${tokens.length} poll jobs`);
+  log.info({ count: tokens.length }, "Scheduled poll jobs");
 }
