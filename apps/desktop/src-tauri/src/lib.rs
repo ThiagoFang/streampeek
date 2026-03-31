@@ -161,7 +161,25 @@ pub fn run() {
 
                     while let Some(action) = rx.recv().await {
                         match action {
-                            tray::TrayAction::ShowWindow => {
+                            tray::TrayAction::ShowWindow { x, y } => {
+                                let scale = win_for_channel.scale_factor().unwrap_or(1.0);
+                                let win_w = (280.0 * scale) as i32;
+                                let win_h = (360.0 * scale) as i32;
+                                let mut wx = x - (win_w / 2);
+                                let mut wy = y - win_h - 16;
+
+                                if let Ok(Some(monitor)) = win_for_channel.primary_monitor() {
+                                    let mon_pos = monitor.position();
+                                    let mon_size = monitor.size();
+                                    let max_x = mon_pos.x + mon_size.width as i32 - win_w;
+                                    let max_y = mon_pos.y + mon_size.height as i32 - win_h;
+                                    wx = wx.clamp(mon_pos.x, max_x);
+                                    wy = wy.clamp(mon_pos.y, max_y);
+                                }
+
+                                let _ = win_for_channel.set_position(tauri::Position::Physical(
+                                    tauri::PhysicalPosition::new(wx, wy),
+                                ));
                                 let _ = win_for_channel.show();
                                 let _ = win_for_channel.set_focus();
                             }

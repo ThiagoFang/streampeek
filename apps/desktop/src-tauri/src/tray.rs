@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use tokio::sync::mpsc;
 
 pub enum TrayAction {
-    ShowWindow,
+    ShowWindow { x: i32, y: i32 },
     Quit,
 }
 
@@ -51,8 +51,8 @@ impl ksni::Tray for StreamPeekTray {
         vec![icon.clone()]
     }
 
-    fn activate(&mut self, _x: i32, _y: i32) {
-        let _ = self.sender.send(TrayAction::ShowWindow);
+    fn activate(&mut self, x: i32, y: i32) {
+        let _ = self.sender.send(TrayAction::ShowWindow { x, y });
     }
 
     fn menu(&self) -> Vec<MenuItem<Self>> {
@@ -60,7 +60,7 @@ impl ksni::Tray for StreamPeekTray {
             MenuItem::Standard(ksni::menu::StandardItem {
                 label: "Mostrar janela".into(),
                 activate: Box::new(|tray: &mut Self| {
-                    let _ = tray.sender.send(TrayAction::ShowWindow);
+                    let _ = tray.sender.send(TrayAction::ShowWindow { x: 0, y: 0 });
                 }),
                 ..Default::default()
             }),
