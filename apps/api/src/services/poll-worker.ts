@@ -1,5 +1,5 @@
 import { Worker, Queue } from "bullmq";
-import { redis } from "../lib/redis";
+import { redis, bullMQConnection } from "../lib/redis";
 import { TwitchStreamer } from "./streamer";
 import { TwitchAuth } from "./twitch-auth";
 import { DbAuthToken } from "../db/queries/auth-token";
@@ -20,7 +20,7 @@ interface StreamEvent {
   gameName: string;
 }
 
-export const pollQueue = new Queue<PollJobData>("stream-poll", { connection: redis });
+export const pollQueue = new Queue<PollJobData>("stream-poll", { connection: bullMQConnection });
 
 class PollProcessor {
   private previousLiveSets = new Map<string, Map<string, { login: string; name: string; gameName: string }>>();
@@ -109,7 +109,7 @@ export const createPollWorker = () => {
     "stream-poll",
     async (job) => pollProcessor.processJob(job),
     {
-      connection: redis,
+      connection: bullMQConnection,
       concurrency: 10,
     },
   );

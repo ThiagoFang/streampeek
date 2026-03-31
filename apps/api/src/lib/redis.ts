@@ -6,6 +6,11 @@ const logger = createLogger({ component: "redis" });
 
 export const redis = new Redis(envVariables.REDIS_URL);
 export const redisSub = new Redis(envVariables.REDIS_URL);
+export const bullMQConnection = {
+  host: new URL(envVariables.REDIS_URL).hostname,
+  port: Number(new URL(envVariables.REDIS_URL).port) || 6379,
+  maxRetriesPerRequest: null,
+};
 
 redis.on("error", (err) => {
   logger.error({ err }, "Redis connection error");
