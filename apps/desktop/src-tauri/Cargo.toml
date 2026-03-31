@@ -29,3 +29,7 @@ tauri-plugin-store = "2"
 tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros"] }
 reqwest = { version = "0.12", features = ["stream"] }
 futures-util = "0.3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+ksni = "0.3"
+image = { version = "0.25", default-features = false, features = ["png"] }

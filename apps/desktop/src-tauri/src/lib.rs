@@ -1,25 +1,27 @@
 mod sse;
+#[cfg(target_os = "linux")]
+mod tray;
 
 use std::collections::HashSet;
 use std::sync::Arc;
-use tauri::{
-    image::Image,
-    tray::{MouseButtonState, TrayIconEvent},
-    Manager, WindowEvent,
-};
-
-use tauri::menu::{MenuBuilder, MenuItemBuilder};
-
-#[cfg(not(target_os = "linux"))]
-use tauri::tray::MouseButton;
+use tauri::{Manager, WindowEvent};
 use tauri_plugin_store::StoreExt;
 use tokio::sync::Mutex;
+
+#[cfg(not(target_os = "linux"))]
+use tauri::{
+    image::Image,
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconEvent},
+};
 
 use sse::SseClient;
 
 pub struct AppState {
     sse_client: Arc<Mutex<SseClient>>,
     online_streamers: Arc<Mutex<HashSet<String>>>,
+    #[cfg(target_os = "linux")]
+    ksni_handle: Arc<Mutex<Option<ksni::Handle<tray::StreamPeekTray>>>>,
 }
 
 impl Default for AppState {
@@ -34,6 +36,8 @@ impl AppState {
         Self {
             sse_client: Arc::new(Mutex::new(SseClient::new(online_streamers.clone()))),
             online_streamers,
+            #[cfg(target_os = "linux")]
+            ksni_handle: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -70,23 +74,37 @@ async fn get_online_streamers(app: tauri::AppHandle) -> Result<Vec<String>, Stri
 }
 
 pub fn update_tray_icon(app: &tauri::AppHandle, has_online: bool) {
-    let tray = match app.tray_by_id("main") {
-        Some(t) => t,
-        None => return,
-    };
+    #[cfg(target_os = "linux")]
+    {
+        let state = app.state::<AppState>();
+        let handle = state.ksni_handle.clone();
+        tokio::spawn(async move {
+            if let Some(h) = handle.lock().await.as_ref() {
+                h.update(move |tray| tray.has_online = has_online).await;
+            }
+        });
+    }
 
-    let icon_bytes = if has_online {
-        include_bytes!("../icons/logo_streampeek_active.png").to_vec()
-    } else {
-        include_bytes!("../icons/logo_streampeek_white.png").to_vec()
-    };
+    #[cfg(not(target_os = "linux"))]
+    {
+        let tray = match app.tray_by_id("main") {
+            Some(t) => t,
+            None => return,
+        };
 
-    let image = match Image::from_bytes(&icon_bytes) {
-        Ok(img) => img,
-        Err(_) => return,
-    };
+        let icon_bytes = if has_online {
+            include_bytes!("../icons/logo_streampeek_active.png").to_vec()
+        } else {
+            include_bytes!("../icons/logo_streampeek_white.png").to_vec()
+        };
 
-    let _ = tray.set_icon(Some(image));
+        let image = match Image::from_bytes(&icon_bytes) {
+            Ok(img) => img,
+            Err(_) => return,
+        };
+
+        let _ = tray.set_icon(Some(image));
+    }
 }
 
 pub fn run() {
@@ -111,16 +129,58 @@ pub fn run() {
                 .map(|v| !v.as_bool().unwrap_or(false))
                 .unwrap_or(true);
 
-            let tray = app.tray_by_id("main").expect("tray not found");
             let win = app.get_webview_window("main").unwrap();
 
+            // --- Platform-specific tray setup ---
+            #[cfg(target_os = "linux")]
             {
+                use ksni::TrayMethods;
+
+                let tauri_tray = app.tray_by_id("main").expect("tray not found");
+                let _ = tauri_tray.set_visible(false);
+
+                let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<tray::TrayAction>();
+                let tray_instance = tray::StreamPeekTray::new(tx);
+
+                let state = app.state::<AppState>();
+                let ksni_handle = state.ksni_handle.clone();
+
+                let app_handle = app.handle().clone();
+                let win_for_channel = win.clone();
+
+                tauri::async_runtime::spawn(async move {
+                    let handle = match tray_instance.spawn().await {
+                        Ok(h) => h,
+                        Err(e) => {
+                            log::error!("Failed to spawn ksni tray: {}", e);
+                            return;
+                        }
+                    };
+
+                    *ksni_handle.lock().await = Some(handle);
+
+                    while let Some(action) = rx.recv().await {
+                        match action {
+                            tray::TrayAction::ShowWindow => {
+                                let _ = win_for_channel.show();
+                                let _ = win_for_channel.set_focus();
+                            }
+                            tray::TrayAction::Quit => {
+                                app_handle.exit(0);
+                            }
+                        }
+                    }
+                });
+            }
+
+            #[cfg(not(target_os = "linux"))]
+            {
+                let tray = app.tray_by_id("main").expect("tray not found");
+
                 let show = MenuItemBuilder::with_id("show", "Mostrar janela").build(app)?;
                 let quit = MenuItemBuilder::with_id("quit", "Sair").build(app)?;
                 let menu = MenuBuilder::new(app).items(&[&show, &quit]).build()?;
                 tray.set_menu(Some(menu))?;
-
-                #[cfg(not(target_os = "linux"))]
                 tray.set_show_menu_on_left_click(false)?;
 
                 tray.on_menu_event(move |app, event| match event.id.as_ref() {
@@ -135,8 +195,39 @@ pub fn run() {
                     }
                     _ => {}
                 });
+
+                let win_for_tray = win.clone();
+                tray.on_tray_icon_event(move |_tray, event| {
+                    if let TrayIconEvent::Click {
+                        position,
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let size = win_for_tray.outer_size().unwrap_or_default();
+                        let mut x = position.x as i32 - (size.width as i32 / 2);
+                        let mut y = position.y as i32 - size.height as i32 - 16;
+
+                        if let Ok(Some(monitor)) = win_for_tray.primary_monitor() {
+                            let mon_pos = monitor.position();
+                            let mon_size = monitor.size();
+                            let max_x = mon_pos.x + mon_size.width as i32 - size.width as i32;
+                            let max_y = mon_pos.y + mon_size.height as i32 - size.height as i32;
+                            x = x.clamp(mon_pos.x, max_x);
+                            y = y.clamp(mon_pos.y, max_y);
+                        }
+
+                        let _ = win_for_tray.set_position(tauri::Position::Physical(
+                            tauri::PhysicalPosition::new(x, y),
+                        ));
+                        let _ = win_for_tray.show();
+                        let _ = win_for_tray.set_focus();
+                    }
+                });
             }
 
+            // --- Common setup ---
             if is_first_run {
                 let _ = win.show();
                 let _ = win.set_focus();
@@ -158,44 +249,6 @@ pub fn run() {
                             let _ = win.hide();
                         }
                         _ => {}
-                    }
-                }
-            });
-
-            tray.on_tray_icon_event(move |_tray, event| {
-                let should_open = match &event {
-                    TrayIconEvent::Click {
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } => {
-                        #[cfg(target_os = "linux")]
-                        { true }
-                        #[cfg(not(target_os = "linux"))]
-                        { matches!(event, TrayIconEvent::Click { button: MouseButton::Left, .. }) }
-                    }
-                    _ => false,
-                };
-
-                if should_open {
-                    if let TrayIconEvent::Click { position, .. } = event {
-                        let size = win.outer_size().unwrap_or_default();
-                        let mut x = position.x as i32 - (size.width as i32 / 2);
-                        let mut y = position.y as i32 - size.height as i32 - 16;
-
-                        if let Ok(Some(monitor)) = win.primary_monitor() {
-                            let mon_pos = monitor.position();
-                            let mon_size = monitor.size();
-                            let max_x = mon_pos.x + mon_size.width as i32 - size.width as i32;
-                            let max_y = mon_pos.y + mon_size.height as i32 - size.height as i32;
-                            x = x.clamp(mon_pos.x, max_x);
-                            y = y.clamp(mon_pos.y, max_y);
-                        }
-
-                        let _ = win.set_position(tauri::Position::Physical(
-                            tauri::PhysicalPosition::new(x, y),
-                        ));
-                        let _ = win.show();
-                        let _ = win.set_focus();
                     }
                 }
             });
