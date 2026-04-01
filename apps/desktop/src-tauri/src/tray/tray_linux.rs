@@ -133,6 +133,11 @@ pub fn setup(
         while let Some(action) = rx.recv().await {
             match action {
                 TrayAction::ShowWindow { x, y } => {
+                    if win_for_channel.is_visible().unwrap_or(false) {
+                        let _ = win_for_channel.hide();
+                        continue;
+                    }
+
                     let scale = win_for_channel.scale_factor().unwrap_or(1.0);
                     let win_w = (280.0 * scale) as i32;
                     let win_h = (360.0 * scale) as i32;
