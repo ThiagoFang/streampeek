@@ -31,3 +31,6 @@ logs
 
 # Claude
 docs
+
+# Sisyphus
+.sisyphus/
