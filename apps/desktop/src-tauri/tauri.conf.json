@@ -17,16 +17,16 @@
         "height": 360,
         "resizable": false,
         "decorations": false,
-        "alwaysOnTop": true,
         "skipTaskbar": true,
-        "visible": true,
+        "visible": false,
         "transparent": false
       }
     ],
     "trayIcon": {
       "id": "main",
-      "iconPath": "icons/logo_streampeek.png",
-      "tooltip": "StreamPeek"
+      "iconPath": "icons/logo_streampeek_white.png",
+      "tooltip": "StreamPeek",
+      "menuOnLeftClick": false
     },
     "security": {
       "csp": null
@@ -35,7 +35,6 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "resources": ["icons/logo_streampeek.png"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
