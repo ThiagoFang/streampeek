@@ -1,5 +1,7 @@
 mod sse;
 #[cfg(target_os = "linux")]
+mod kwin;
+#[cfg(target_os = "linux")]
 mod tray;
 
 use std::collections::HashSet;
@@ -147,6 +149,7 @@ pub fn run() {
 
                 let app_handle = app.handle().clone();
                 let win_for_channel = win.clone();
+                let use_kwin = kwin::is_kde_wayland();
 
                 tauri::async_runtime::spawn(async move {
                     let handle = match tray_instance.spawn().await {
@@ -177,10 +180,31 @@ pub fn run() {
                                     wy = wy.clamp(mon_pos.y, max_y);
                                 }
 
-                                let _ = win_for_channel.set_position(tauri::Position::Physical(
-                                    tauri::PhysicalPosition::new(wx, wy),
-                                ));
-                                let _ = win_for_channel.show();
+                                if use_kwin {
+                                    match kwin::prepare_move(wx, wy, win_w, win_h).await {
+                                        Ok(guard) => {
+                                            let _ = win_for_channel.show();
+                                            // Give KWin time to fire windowAdded and move
+                                            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                                            guard.cleanup().await;
+                                        }
+                                        Err(e) => {
+                                            log::warn!("KWin prepare_move failed: {}", e);
+                                            let _ = win_for_channel.set_position(
+                                                tauri::Position::Physical(
+                                                    tauri::PhysicalPosition::new(wx, wy),
+                                                ),
+                                            );
+                                            let _ = win_for_channel.show();
+                                        }
+                                    }
+                                } else {
+                                    let _ = win_for_channel.set_position(tauri::Position::Physical(
+                                        tauri::PhysicalPosition::new(wx, wy),
+                                    ));
+                                    let _ = win_for_channel.show();
+                                }
+
                                 let _ = win_for_channel.set_focus();
                             }
                             tray::TrayAction::Quit => {
