@@ -156,56 +156,65 @@ fn parse_sse_event(message: &str) -> Option<StreamEvent> {
     None
 }
 
-async fn handle_event(
-    app_handle: &AppHandle,
-    event: &StreamEvent,
-    online_streamers: &Arc<Mutex<HashSet<String>>>,
-) {
+fn build_payload(event: &StreamEvent) -> StreamerPayload {
     let login = event.broadcaster_user_login.clone().unwrap_or_default();
     let display_name = event
         .broadcaster_user_name
         .clone()
         .unwrap_or_else(|| login.clone());
-    let payload = StreamerPayload {
-        login: login.clone(),
-        display_name: display_name.clone(),
+    StreamerPayload {
+        login,
+        display_name,
         game_name: event.game_name.clone(),
-    };
+    }
+}
+
+async fn update_online_state(
+    login: &str,
+    is_online: bool,
+    online_streamers: &Arc<Mutex<HashSet<String>>>,
+) -> bool {
+    let mut streamers = online_streamers.lock().await;
+    if is_online {
+        streamers.insert(login.to_string());
+    } else {
+        streamers.remove(login);
+    }
+    !streamers.is_empty()
+}
+
+fn send_notification(app_handle: &AppHandle, display_name: &str, login: &str, game_name: &Option<String>) {
+    let body = game_name
+        .as_ref()
+        .map(|g| format!("Entrou ao vivo — {}", g))
+        .unwrap_or_else(|| "Entrou ao vivo!".to_string());
+
+    let _ = app_handle
+        .notification()
+        .builder()
+        .title(display_name)
+        .body(&body)
+        .extra("login", login)
+        .show();
+}
+
+async fn handle_event(
+    app_handle: &AppHandle,
+    event: &StreamEvent,
+    online_streamers: &Arc<Mutex<HashSet<String>>>,
+) {
+    let payload = build_payload(event);
 
     match event.event_type.as_str() {
         "stream.online" => {
-            {
-                let mut streamers = online_streamers.lock().await;
-                streamers.insert(login.clone());
-            }
-
+            update_online_state(&payload.login, true, online_streamers).await;
             crate::update_tray_icon(app_handle, true);
-
-            let body = event
-                .game_name
-                .as_ref()
-                .map(|g| format!("Entrou ao vivo — {}", g))
-                .unwrap_or_else(|| "Entrou ao vivo!".to_string());
-
-            let _ = app_handle
-                .notification()
-                .builder()
-                .title(&display_name)
-                .body(&body)
-                .extra("login", &login)
-                .show();
-
+            send_notification(app_handle, &payload.display_name, &payload.login, &event.game_name);
             let _ = app_handle.emit("streamer-online", &payload);
         }
         "stream.offline" => {
-            let has_online = {
-                let mut streamers = online_streamers.lock().await;
-                streamers.remove(&login);
-                !streamers.is_empty()
-            };
-
+            let has_online = update_online_state(&payload.login, false, online_streamers).await;
             crate::update_tray_icon(app_handle, has_online);
-
             let _ = app_handle.emit("streamer-offline", &payload);
         }
         _ => {}
