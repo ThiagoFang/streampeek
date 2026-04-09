@@ -1,3 +1,4 @@
+import { LavaLampBackground } from "@/components/lava-lamp-background";
 import { useUser } from "@/lib/auth";
 import { usePathStore } from "@/store/path";
 
@@ -7,7 +8,7 @@ function Header() {
 
   return (
     <header
-      className="sticky top-0 z-10 w-full flex items-center justify-between bg-background p-2 border-b border-border"
+      className="sticky top-0 z-50 w-full flex items-center justify-between bg-black/50 backdrop-blur-xl p-2 border-b border-white/5"
       data-tauri-drag-region=""
     >
       <img
@@ -33,7 +34,8 @@ interface AuthenticatedLayoutProps extends React.HTMLAttributes<HTMLDivElement> 
 
 function Layout({ children, ...rest }: AuthenticatedLayoutProps) {
   return (
-    <section className="w-full h-dvh overflow-y-auto flex flex-col" {...rest}>
+    <section className="relative w-full h-dvh overflow-y-auto flex flex-col" {...rest}>
+      <LavaLampBackground />
       <Header />
       {children}
     </section>

@@ -72,6 +72,28 @@ fn setup_window(
     app: &tauri::App,
     win: &tauri::WebviewWindow,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(target_os = "macos")]
+    {
+        use tauri::utils::config::{WindowEffect, WindowEffectsConfig, WindowEffectState};
+        let _ = win.set_effects(Some(WindowEffectsConfig {
+            effects: vec![WindowEffect::UnderWindowBackground],
+            state: Some(WindowEffectState::Active),
+            radius: None,
+            color: None,
+        }));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use tauri::utils::config::{WindowEffect, WindowEffectsConfig};
+        let _ = win.set_effects(Some(WindowEffectsConfig {
+            effects: vec![WindowEffect::Mica, WindowEffect::Acrylic],
+            state: None,
+            radius: None,
+            color: None,
+        }));
+    }
+
     let store = app.store("settings.json")?;
     let is_first_run = store
         .get("has_run")

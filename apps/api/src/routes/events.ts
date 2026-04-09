@@ -34,6 +34,7 @@ export async function handleEvents(c: Context) {
     });
 
     while (true) {
+      await stream.writeSSE({ data: "", event: "ping" });
       await stream.sleep(30000);
     }
   });

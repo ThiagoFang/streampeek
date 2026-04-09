@@ -19,7 +19,7 @@
         "decorations": false,
         "skipTaskbar": true,
         "visible": false,
-        "transparent": false
+        "transparent": true
       }
     ],
     "trayIcon": {

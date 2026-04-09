@@ -6,16 +6,13 @@ const logger = createLogger({ component: "session-cleanup" });
 const INACTIVE_DAYS = 30;
 
 export async function cleanupInactiveSessions() {
-  const tokens = await DbAuthToken.getAll();
-  const now = new Date();
-  const cutoff = new Date(now.getTime() - INACTIVE_DAYS * 24 * 60 * 60 * 1000);
+  const cutoff = new Date(Date.now() - INACTIVE_DAYS * 24 * 60 * 60 * 1000);
+  const expiredTokens = await DbAuthToken.getExpiredBefore(cutoff);
 
-  for (const token of tokens) {
-    if (new Date(token.expires_at) < cutoff) {
-      logger.info({ sessionId: token.session_id }, "Removing expired session");
-      await removeUserPoll(token.session_id);
-      await DbAuthToken.deleteBySessionId(token.session_id);
-    }
+  for (const token of expiredTokens) {
+    logger.info({ sessionId: token.session_id }, "Removing expired session");
+    await removeUserPoll(token.session_id);
+    await DbAuthToken.deleteBySessionId(token.session_id);
   }
 }
 

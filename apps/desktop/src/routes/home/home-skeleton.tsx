@@ -1,7 +1,7 @@
 function StreamerListSkeleton() {
   return (
     <div className="flex flex-1 flex-col">
-      <section className="flex flex-col border-b border-border bg-card">
+      <section className="flex flex-col border-b bg-white/[0.03] backdrop-blur-md border-white/5">
         <div className="flex items-center justify-between px-2 py-1">
           <div className="h-2.5 w-14 animate-pulse rounded bg-muted" />
           <div className="h-2.5 w-4 animate-pulse rounded bg-muted" />
@@ -18,7 +18,7 @@ function StreamerListSkeleton() {
           ))}
         </div>
       </section>
-      <section className="flex flex-col bg-card">
+      <section className="flex flex-col mt-2 bg-white/[0.03] backdrop-blur-md">
         <div className="px-2 py-1">
           <div className="h-2.5 w-14 animate-pulse rounded bg-muted" />
         </div>

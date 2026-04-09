@@ -1,19 +1,21 @@
-import { createPollWorker } from "./services/poll-worker";
+import { createPollWorker, scheduleUserPoll, removeUserPoll } from "./services/poll-worker";
 import { startCleanupJob } from "./services/session-cleanup";
 import { getConnectionManager } from "./services/connection-manager";
 import { TwitchAuth } from "./services/twitch-auth";
 import { DbAuthToken } from "./db/queries/auth-token";
-import { removeUserPoll } from "./services/poll-worker";
+import { db } from "./db";
+import { redis, redisSub } from "./lib/redis";
 import { log } from "./lib/logger";
 
 export async function initializeApp() {
-  createPollWorker();
+  const worker = createPollWorker();
 
   getConnectionManager();
 
+  setupGracefulShutdown(worker);
+
   TwitchAuth.onLogout = async (userId) => {
-    const tokens = await DbAuthToken.getAll();
-    const token = tokens.find((t) => t.user_id === userId);
+    const token = await DbAuthToken.getByUserId(userId);
     if (token) {
       await removeUserPoll(token.session_id);
     }
@@ -29,8 +31,24 @@ export async function initializeApp() {
 async function scheduleExistingPolls() {
   const tokens = await DbAuthToken.getAll();
   for (const token of tokens) {
-    const { scheduleUserPoll } = await import("./services/poll-worker");
     await scheduleUserPoll(token.session_id);
   }
   log.info({ count: tokens.length }, "Scheduled poll jobs");
+}
+
+function setupGracefulShutdown(worker: ReturnType<typeof createPollWorker>) {
+  const shutdown = async () => {
+    log.info({}, "Shutting down gracefully...");
+
+    await worker.close();
+    await db.destroy();
+    await redis.quit();
+    await redisSub.quit();
+
+    log.info({}, "Shutdown complete");
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }

@@ -9,6 +9,7 @@
     "dev": "bun --hot src/server.ts",
     "start": "bun src/server.ts",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "db:push": "bunx prisma db push --config prisma/prisma.config.ts",
     "db:generate": "bunx prisma generate --config prisma/prisma.config.ts"
   },

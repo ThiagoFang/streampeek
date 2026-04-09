@@ -46,7 +46,8 @@ app.all("/rpc/*", async (c) => {
 
 app.onError((err, c) => {
   if (err instanceof type.errors) {
-    return c.json({ error: "VALIDATION_ERROR", details: err.summary }, 400);
+    log.warn({ details: err.summary }, "Validation error");
+    return c.json({ error: "VALIDATION_ERROR" }, 400);
   }
 
   if ("status" in err && typeof err.status === "number") {

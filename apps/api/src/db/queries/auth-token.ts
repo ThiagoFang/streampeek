@@ -63,4 +63,12 @@ export const DbAuthToken = {
   async deleteBySessionId(sessionId: string) {
     await db.deleteFrom("auth_tokens").where("session_id", "=", sessionId).execute();
   },
+
+  async getExpiredBefore(cutoff: Date) {
+    return db
+      .selectFrom("auth_tokens as at")
+      .where("at.expires_at", "<", cutoff)
+      .selectAll("at")
+      .execute();
+  },
 };

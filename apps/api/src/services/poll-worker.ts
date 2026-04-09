@@ -24,6 +24,7 @@ export const pollQueue = new Queue<PollJobData>("stream-poll", { connection: bul
 
 class PollProcessor {
   private previousLiveSets = new Map<string, Map<string, { login: string; name: string; gameName: string }>>();
+  private initialPollDone = new Set<string>();
 
   async processJob(job: { data: PollJobData }) {
     const { sessionId } = job.data;
@@ -56,38 +57,43 @@ class PollProcessor {
       }
     }
 
-    const previousLiveSet = this.previousLiveSets.get(token.user_id) || new Map();
+    if (!this.initialPollDone.has(token.user_id)) {
+      this.initialPollDone.add(token.user_id);
+      this.previousLiveSets.set(token.user_id, currentLiveSet);
+    } else {
+      const previousLiveSet = this.previousLiveSets.get(token.user_id) || new Map();
 
-    for (const [id, info] of currentLiveSet) {
-      if (!previousLiveSet.has(id)) {
-        const excluded = await DbNotificationExclusion.isExcluded(token.user_id, id);
-        if (excluded) continue;
+      for (const [id, info] of currentLiveSet) {
+        if (!previousLiveSet.has(id)) {
+          const excluded = await DbNotificationExclusion.isExcluded(token.user_id, id);
+          if (excluded) continue;
 
-        const event: StreamEvent = {
-          type: "stream.online",
-          broadcasterUserId: id,
-          broadcasterUserLogin: info.login,
-          broadcasterUserName: info.name,
-          gameName: info.gameName,
-        };
-        await redis.publish(`stream:${token.user_id}`, JSON.stringify(event));
+          const event: StreamEvent = {
+            type: "stream.online",
+            broadcasterUserId: id,
+            broadcasterUserLogin: info.login,
+            broadcasterUserName: info.name,
+            gameName: info.gameName,
+          };
+          await redis.publish(`stream:${token.user_id}`, JSON.stringify(event));
+        }
       }
-    }
 
-    for (const [id, info] of previousLiveSet) {
-      if (!currentLiveSet.has(id)) {
-        const event: StreamEvent = {
-          type: "stream.offline",
-          broadcasterUserId: id,
-          broadcasterUserLogin: info.login,
-          broadcasterUserName: info.name,
-          gameName: info.gameName,
-        };
-        await redis.publish(`stream:${token.user_id}`, JSON.stringify(event));
+      for (const [id, info] of previousLiveSet) {
+        if (!currentLiveSet.has(id)) {
+          const event: StreamEvent = {
+            type: "stream.offline",
+            broadcasterUserId: id,
+            broadcasterUserLogin: info.login,
+            broadcasterUserName: info.name,
+            gameName: info.gameName,
+          };
+          await redis.publish(`stream:${token.user_id}`, JSON.stringify(event));
+        }
       }
-    }
 
-    this.previousLiveSets.set(token.user_id, currentLiveSet);
+      this.previousLiveSets.set(token.user_id, currentLiveSet);
+    }
 
     await pollQueue.add(
       "poll",

@@ -1,3 +1,4 @@
+import { sql } from "kysely";
 import { db } from "..";
 
 export const DbNotificationExclusion = {
@@ -33,7 +34,7 @@ export const DbNotificationExclusion = {
       .selectFrom("notification_exclusions as ne")
       .where("ne.user_id", "=", userId)
       .where("ne.broadcaster_id", "=", broadcasterId)
-      .select(db.fn<number>("1").as("exists"))
+      .select(sql<number>`1`.as("exists"))
       .executeTakeFirst();
 
     return !!row;
