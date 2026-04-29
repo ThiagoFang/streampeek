@@ -34,7 +34,7 @@ interface AuthenticatedLayoutProps extends React.HTMLAttributes<HTMLDivElement> 
 
 function Layout({ children, ...rest }: AuthenticatedLayoutProps) {
   return (
-    <section className="relative w-full h-dvh overflow-y-auto flex flex-col" {...rest}>
+    <section className="relative w-full h-full overflow-y-auto flex flex-col" {...rest}>
       <LavaLampBackground />
       <Header />
       {children}

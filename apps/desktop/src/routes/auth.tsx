@@ -3,7 +3,7 @@ import { useConnect } from "@/hooks/use-connect";
 
 export function Auth() {
   return (
-    <section className="w-full gap-9 h-dvh p-4 flex flex-col items-center justify-center bg-background">
+    <section className="w-full gap-9 h-full p-4 flex flex-col items-center justify-center bg-background">
       <AuthContent />
       <AuthButton />
     </section>

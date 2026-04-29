@@ -38,7 +38,7 @@ export function Auth() {
   }, [polling]);
 
   return (
-    <section className="w-full gap-8 h-dvh p-4 flex flex-col items-center justify-center">
+    <section className="w-full gap-8 h-full p-4 flex flex-col items-center justify-center">
       <img src="/logo_streampeek.png" alt="Logo StreamPeek" className="w-6" />
 
       <div>

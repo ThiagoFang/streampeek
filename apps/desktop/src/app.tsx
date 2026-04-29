@@ -30,7 +30,7 @@ function AuthenticatedApp() {
 
 function AppSkeleton() {
   return (
-    <section className="w-full h-dvh p-4 flex flex-col">
+    <section className="w-full h-full p-4 flex flex-col">
       <header className="w-full flex items-center justify-between">
         <div className="w-3.5 h-3.5 rounded bg-background animate-pulse" />
         <div className="size-6 rounded-md bg-background animate-pulse" />
