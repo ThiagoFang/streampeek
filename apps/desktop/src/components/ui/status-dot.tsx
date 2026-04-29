@@ -12,8 +12,8 @@ function StatusDot({ variant, className }: StatusDotProps) {
 
   return (
     <div className={cn("inline-grid place-items-start", className)}>
-      <div className="col-start-1 row-start-1 size-[5px] rounded-full bg-[#64fd95] opacity-50 blur-[2px]" />
-      <div className="col-start-1 row-start-1 size-[5px] rounded-full bg-[#64fd95]" />
+      <div className="col-start-1 row-start-1 size-[7px] rounded-full bg-[#64fd95] opacity-50 blur-[2px]" />
+      <div className="col-start-1 row-start-1 size-[7px] rounded-full bg-[#64fd95]" />
     </div>
   );
 }

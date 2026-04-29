@@ -8,7 +8,7 @@ function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full flex items-center justify-between bg-background/80 backdrop-blur-xl p-2 border-b border-border"
+      className="sticky top-0 z-50 w-full flex items-center justify-between bg-background p-2 border-b border-border"
       data-tauri-drag-region=""
     >
       <img

@@ -79,7 +79,7 @@ function OfflineFooter({ offline }: { offline: Streamer[] }) {
   if (offline.length === 0) return null;
 
   return (
-    <footer className="sticky bottom-0 mt-auto flex items-center gap-1.5 border-t border-border px-3 py-2">
+    <footer className="sticky bottom-0 z-50 mt-auto flex items-center gap-1.5 border-t border-border bg-background px-3 py-2">
       <StatusDot variant="offline" />
       <span className="text-[10px] font-medium tracking-[0.5px] text-muted-foreground">
         {offline.length} OFFLINE

@@ -42,11 +42,7 @@ function HomeStreamerOnlineAvatar({ streamer }: HomeStreamerProps) {
   return (
     <div className="relative shrink-0">
       <div
-        className="size-6 rounded-full p-px shadow-[0_0_8px_rgba(145,70,255,0.05)]"
-        style={{
-          background:
-            "linear-gradient(to bottom, color-mix(in srgb, var(--primary) 5%, transparent), color-mix(in srgb, var(--primary-darker) 5%, transparent))",
-        }}
+        className="size-7 rounded-full border border-primary p-px"
       >
         <img
           src={streamer.profileImageUrl}
