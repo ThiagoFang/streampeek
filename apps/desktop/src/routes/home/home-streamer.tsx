@@ -15,7 +15,7 @@ function HomeStreamerOnline({ streamer }: HomeStreamerProps) {
     <li
       role="button"
       tabIndex={0}
-      className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-2 hover:bg-white/5"
+      className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-2 hover:bg-accent"
       onClick={handleClick}
       onKeyDown={(e) => e.key === "Enter" && handleClick()}
     >
@@ -42,9 +42,10 @@ function HomeStreamerOnlineAvatar({ streamer }: HomeStreamerProps) {
   return (
     <div className="relative shrink-0">
       <div
-        className="size-6 rounded-full p-px shadow-[0_0_8px_rgba(145,70,255,0.4)]"
+        className="size-6 rounded-full p-px shadow-[0_0_8px_rgba(145,70,255,0.05)]"
         style={{
-          background: "linear-gradient(to bottom, var(--primary), var(--primary-darker))",
+          background:
+            "linear-gradient(to bottom, color-mix(in srgb, var(--primary) 5%, transparent), color-mix(in srgb, var(--primary-darker) 5%, transparent))",
         }}
       >
         <img
@@ -65,11 +66,11 @@ function HomeStreamerOffline({ streamer }: HomeStreamerProps) {
     <li
       role="button"
       tabIndex={0}
-      className="flex cursor-pointer items-center gap-2 rounded-lg p-1"
+      className="flex cursor-pointer items-center gap-2 rounded-lg p-1 hover:bg-accent"
       onClick={handleClick}
       onKeyDown={(e) => e.key === "Enter" && handleClick()}
     >
-      <div className="size-[18px] shrink-0 rounded-full border border-white/10">
+      <div className="size-[18px] shrink-0 rounded-full border border-border">
         <img
           src={streamer.profileImageUrl}
           alt={streamer.displayName}

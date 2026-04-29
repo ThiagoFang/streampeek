@@ -50,7 +50,7 @@ export function Auth() {
       <button
         onClick={handleConnect}
         disabled={polling}
-        className="p-2 font-medium rounded-md bg-primary w-full text-background"
+        className="p-2 font-medium rounded-md bg-primary w-full text-foreground"
       >
         {polling ? (
           "Aguardando login..."

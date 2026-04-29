@@ -14,7 +14,10 @@ function AuthContent() {
   return (
     <>
       <div className="relative">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-7 rounded-full bg-primary blur-[32px]" />
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-7 rounded-full bg-primary"
+          style={{ animation: "logo-breathe 6s ease-in-out infinite" }}
+        />
         <img src="/logo_streampeek.png" alt="Logo StreamPeek" className="w-[30px] h-[46px]" />
       </div>
 
@@ -44,7 +47,7 @@ function AuthButton() {
       {isPolling ? (
         "Conectando..."
       ) : (
-        <span className="text-[12px] font-medium text-background">
+        <span className="text-[12px] font-medium text-foreground">
           Entrar com <span className="font-semibold">Twitch.tv</span>
         </span>
       )}

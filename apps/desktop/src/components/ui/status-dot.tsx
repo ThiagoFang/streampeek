@@ -7,7 +7,7 @@ interface StatusDotProps {
 
 function StatusDot({ variant, className }: StatusDotProps) {
   if (variant === "offline") {
-    return <div className={cn("size-[5px] rounded-full bg-accent", className)} />;
+    return <div className={cn("size-[5px] rounded-full bg-muted-foreground/40", className)} />;
   }
 
   return (

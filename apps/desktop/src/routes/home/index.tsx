@@ -28,6 +28,7 @@ function StreamerList() {
     <div className="flex flex-1 flex-col">
       <OnlineSection live={live} />
       <OfflineSection offline={offline} />
+      <OfflineFooter offline={offline} />
     </div>
   );
 }
@@ -36,11 +37,11 @@ function OnlineSection({ live }: { live: Streamer[] }) {
   if (live.length === 0) return null;
 
   return (
-    <section className="flex flex-col border-b bg-white/[0.03] backdrop-blur-md border-white/5">
+    <section className="flex flex-col border-b border-border">
       <div className="flex items-center justify-between px-2 py-1">
         <div className="flex items-center gap-1">
           <StatusDot variant="online" />
-          <span className="text-[10px] font-medium tracking-[0.5px] text-white">ONLINE</span>
+          <span className="text-[10px] font-medium tracking-[0.5px] text-foreground">ONLINE</span>
         </div>
         <span className="text-[10px] font-semibold tracking-[0.5px] text-[#64fd95]">
           {live.length}
@@ -59,9 +60,11 @@ function OfflineSection({ offline }: { offline: Streamer[] }) {
   if (offline.length === 0) return null;
 
   return (
-    <section className="flex flex-col pt-2 bg-white/[0.03] backdrop-blur-md">
+    <section className="flex flex-col pt-2">
       <div className="px-2 py-1">
-        <span className="text-[10px] font-medium tracking-[0.5px] text-white/20">OFFLINE</span>
+        <span className="text-[10px] font-medium tracking-[0.5px] text-muted-foreground">
+          OFFLINE
+        </span>
       </div>
       <ul className="flex flex-col px-0.5 py-1">
         {offline.map((streamer) => (
@@ -69,6 +72,19 @@ function OfflineSection({ offline }: { offline: Streamer[] }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+function OfflineFooter({ offline }: { offline: Streamer[] }) {
+  if (offline.length === 0) return null;
+
+  return (
+    <footer className="sticky bottom-0 mt-auto flex items-center gap-1.5 border-t border-border px-3 py-2">
+      <StatusDot variant="offline" />
+      <span className="text-[10px] font-medium tracking-[0.5px] text-muted-foreground">
+        {offline.length} OFFLINE
+      </span>
+    </footer>
   );
 }
 

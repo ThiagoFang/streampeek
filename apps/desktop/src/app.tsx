@@ -32,8 +32,8 @@ function AppSkeleton() {
   return (
     <section className="w-full h-dvh p-4 flex flex-col">
       <header className="w-full flex items-center justify-between">
-        <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse" />
-        <div className="size-6 rounded-md bg-muted animate-pulse" />
+        <div className="w-3.5 h-3.5 rounded bg-background animate-pulse" />
+        <div className="size-6 rounded-md bg-background animate-pulse" />
       </header>
     </section>
   );
