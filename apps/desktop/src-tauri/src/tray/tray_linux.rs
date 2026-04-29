@@ -142,7 +142,7 @@ pub fn setup(
                     let win_w = (280.0 * scale) as i32;
                     let win_h = (360.0 * scale) as i32;
                     let mut wx = x - (win_w / 2);
-                    let mut wy = y - win_h - 32;
+                    let mut wy = if y < win_h { y + 32 } else { y - win_h - 32 };
 
                     if let Ok(Some(monitor)) = win_for_channel.primary_monitor() {
                         let mon_pos = monitor.position();

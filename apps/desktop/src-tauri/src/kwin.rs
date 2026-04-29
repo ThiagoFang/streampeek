@@ -22,11 +22,16 @@ pub async fn prepare_move(
     height: i32,
 ) -> Result<KwinScriptGuard, Box<dyn std::error::Error + Send + Sync>> {
     let script_content = format!(
-        r#"workspace.windowAdded.connect(function(client) {{
+        r#"function tryMove(client) {{
     if (client.caption === "{WINDOW_CAPTION}") {{
-        client.frameGeometry = {{x: {x}, y: {y}, width: {width}, height: {height}}};
+        client.frameGeometry = {{ x: {x}, y: {y}, width: {width}, height: {height} }};
     }}
-}});"#
+}}
+workspace.windowAdded.connect(tryMove);
+var existing = workspace.windowList ? workspace.windowList() : (workspace.clientList ? workspace.clientList() : []);
+for (var i = 0; i < existing.length; i++) {{
+    tryMove(existing[i]);
+}}"#
     );
 
     let script_path = env::temp_dir().join(format!(
