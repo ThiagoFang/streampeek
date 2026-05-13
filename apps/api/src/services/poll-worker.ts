@@ -103,6 +103,8 @@ class PollProcessor {
         jobId: `poll-${sessionId}`,
         attempts: 3,
         backoff: { type: "exponential", delay: 1000 },
+        removeOnComplete: { count: 0 },
+        removeOnFail: { count: 50 },
       },
     );
   }
@@ -133,6 +135,8 @@ export const scheduleUserPoll = async (sessionId: string) => {
       jobId: `poll-${sessionId}`,
       attempts: 3,
       backoff: { type: "exponential", delay: 1000 },
+      removeOnComplete: { count: 0 },
+      removeOnFail: { count: 50 },
     },
   );
 };
