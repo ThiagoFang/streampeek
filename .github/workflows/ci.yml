@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  api:
+    name: API typecheck + tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: streampeek
+          POSTGRES_PASSWORD: streampeek
+          POSTGRES_DB: streampeek
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U streampeek"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://streampeek:streampeek@localhost:5432/streampeek
+      REDIS_URL: redis://localhost:6379
+      TWITCH_CLIENT_ID: ci-dummy
+      TWITCH_CLIENT_SECRET: ci-dummy
+      TWITCH_REDIRECT_URI: http://localhost:3000/auth/twitch/callback
+      CORS_ORIGIN: http://localhost:1420
+      PORT: "3000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: bunx prisma generate --config prisma/prisma.config.ts
+
+      - name: Apply migrations
+        working-directory: apps/api
+        run: bunx prisma migrate deploy --config prisma/prisma.config.ts
+
+      - name: Typecheck
+        run: bun --filter '@streampeek/api' typecheck
+
+      - name: Test
+        working-directory: apps/api
+        run: bun test
