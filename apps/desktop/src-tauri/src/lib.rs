@@ -83,17 +83,6 @@ fn setup_window(
         }));
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        use tauri::utils::config::{WindowEffect, WindowEffectsConfig};
-        let _ = win.set_effects(Some(WindowEffectsConfig {
-            effects: vec![WindowEffect::Mica, WindowEffect::Acrylic],
-            state: None,
-            radius: None,
-            color: None,
-        }));
-    }
-
     let store = app.store("settings.json")?;
     let is_first_run = store
         .get("has_run")
