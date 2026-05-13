@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Streampeek — Workflows</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0b0d12;
+        --panel: #11141b;
+        --panel-2: #161a22;
+        --border: #232936;
+        --text: #e6e8ee;
+        --muted: #8b93a6;
+        --accent: #7c5cff;
+        --accent-2: #00d3a7;
+        --hot: #ff5d8f;
+        --dim: #2a2f3d;
+        --desktop: #4c8bf5;
+        --api: #00d3a7;
+        --infra: #f0b429;
+        --external: #ff5d8f;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      .app { display: grid; grid-template-columns: 260px 1fr 360px; height: 100vh; }
+      aside { background: var(--panel); border-right: 1px solid var(--border); padding: 18px; overflow-y: auto; }
+      aside h1 { font-size: 16px; margin: 0 0 4px; letter-spacing: .2px; }
+      aside .sub { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+      .flow-btn { display: block; width: 100%; text-align: left; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: all .15s ease; font: inherit; }
+      .flow-btn:hover { border-color: var(--accent); }
+      .flow-btn.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; background: linear-gradient(180deg, rgba(124,92,255,.12), rgba(124,92,255,.04)); }
+      .flow-btn .ftitle { font-weight: 600; font-size: 13px; }
+      .flow-btn .fdesc { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+      main { position: relative; overflow: hidden; }
+      .canvas-wrap { position: absolute; inset: 0; }
+      svg.canvas { width: 100%; height: 100%; display: block; }
+
+      .legend { position: absolute; left: 16px; bottom: 16px; background: rgba(17,20,27,.85); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; backdrop-filter: blur(6px); font-size: 12px; color: var(--muted); }
+      .legend .row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+      .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+      .toolbar { position: absolute; right: 16px; top: 16px; display: flex; gap: 8px; }
+      .toolbar button { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; }
+      .toolbar button:hover { border-color: var(--accent); }
+
+      .details { background: var(--panel); border-left: 1px solid var(--border); padding: 18px; overflow-y: auto; }
+      .details h2 { font-size: 15px; margin: 0 0 4px; }
+      .details .summary { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+      .step { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; background: var(--panel-2); cursor: pointer; transition: all .15s; }
+      .step:hover { border-color: var(--accent); }
+      .step.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+      .step .head { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+      .step .num { background: var(--accent); color: #0b0d12; border-radius: 999px; font-weight: 700; font-size: 11px; padding: 1px 7px; }
+      .step .arrow { color: var(--muted); }
+      .step .via { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; margin-top: 6px; color: var(--text); }
+      .step .payload { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--muted); margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
+      .step .note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+      /* SVG node styles */
+      .node rect { fill: var(--panel-2); stroke: var(--border); stroke-width: 1.5; transition: all .25s ease; }
+      .node.kind-desktop rect { stroke: var(--desktop); }
+      .node.kind-api rect { stroke: var(--api); }
+      .node.kind-infra rect { stroke: var(--infra); }
+      .node.kind-external rect { stroke: var(--external); }
+      .node text.title { fill: var(--text); font: 600 12px ui-sans-serif, system-ui; }
+      .node text.sub { fill: var(--muted); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .node.dim rect { opacity: .25; }
+      .node.dim text { opacity: .25; }
+      .node.lit rect { fill: rgba(124,92,255,.10); stroke: var(--accent); stroke-width: 2.5; filter: drop-shadow(0 0 6px rgba(124,92,255,.35)); }
+      .node.lit text.title { fill: #fff; }
+
+      .edge { fill: none; stroke: var(--dim); stroke-width: 1.5; opacity: .6; transition: all .3s ease; }
+      .edge.dim { opacity: .15; }
+      .edge.lit { stroke: var(--accent); stroke-width: 2.5; opacity: 1; filter: drop-shadow(0 0 4px rgba(124,92,255,.55)); }
+      .edge.pulse { stroke-dasharray: 6 8; animation: dash 1.2s linear infinite; }
+      @keyframes dash { to { stroke-dashoffset: -28; } }
+
+      .edge-label { fill: var(--muted); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0; transition: opacity .2s; }
+      .edge-label.lit { fill: var(--accent-2); opacity: 1; }
+
+      .group-label { fill: var(--muted); font: 700 10px ui-sans-serif, system-ui; letter-spacing: 1.5px; text-transform: uppercase; }
+      .group-box { fill: none; stroke: var(--border); stroke-dasharray: 4 6; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside>
+        <h1>Streampeek</h1>
+        <div class="sub">Mapa de fluxos entre packages</div>
+        <div id="flow-list"></div>
+      </aside>
+
+      <main>
+        <div class="canvas-wrap">
+          <svg class="canvas" id="canvas" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="toolbar">
+          <button id="btn-play">▶ Reproduzir</button>
+          <button id="btn-reset">Limpar</button>
+        </div>
+        <div class="legend">
+          <div class="row"><span class="dot" style="background: var(--desktop)"></span> Desktop (Tauri + React)</div>
+          <div class="row"><span class="dot" style="background: var(--api)"></span> API (Hono + ORPC)</div>
+          <div class="row"><span class="dot" style="background: var(--infra)"></span> Infra (Postgres / Redis)</div>
+          <div class="row"><span class="dot" style="background: var(--external)"></span> Externo (Twitch)</div>
+        </div>
+      </main>
+
+      <section class="details" id="details">
+        <h2>Selecione um fluxo</h2>
+        <div class="summary">Clique em um fluxo à esquerda para ver as etapas e como os dados trafegam entre os packages.</div>
+      </section>
+    </div>
+
+    <script>
+      // ─────────────────────────────────────────────────────────────────────────
+      // Modelo: nós, grupos e fluxos. Editar este objeto JS para adicionar fluxos.
+      // ─────────────────────────────────────────────────────────────────────────
+      const MODEL = {
+        groups: [
+          { id: "desktop", label: "apps/desktop", x: 40,  y: 60,  w: 320, h: 780 },
+          { id: "api",     label: "apps/api",     x: 440, y: 60,  w: 460, h: 540 },
+          { id: "infra",   label: "infra",        x: 440, y: 620, w: 460, h: 220 },
+          { id: "external",label: "external",     x: 960, y: 60,  w: 200, h: 780 },
+        ],
+        nodes: [
+          // desktop column
+          { id: "d.routes.auth",      group: "desktop", kind: "desktop",  x:  60, y: 110, w: 280, h: 54, title: "routes/auth",        sub: "src/routes/auth.tsx" },
+          { id: "d.routes.home",      group: "desktop", kind: "desktop",  x:  60, y: 180, w: 280, h: 54, title: "routes/home",        sub: "src/routes/home/*" },
+          { id: "d.routes.settings",  group: "desktop", kind: "desktop",  x:  60, y: 250, w: 280, h: 54, title: "routes/settings",    sub: "src/routes/settings/*" },
+          { id: "d.auth",             group: "desktop", kind: "desktop",  x:  60, y: 330, w: 280, h: 54, title: "lib/auth",           sub: "context + guard" },
+          { id: "d.orpc",             group: "desktop", kind: "desktop",  x:  60, y: 400, w: 280, h: 54, title: "lib/orpc",           sub: "client ORPC" },
+          { id: "d.store",            group: "desktop", kind: "desktop",  x:  60, y: 470, w: 280, h: 54, title: "store/*",            sub: "zustand: session, settings" },
+          { id: "d.tauri",            group: "desktop", kind: "desktop",  x:  60, y: 540, w: 280, h: 54, title: "lib/tauri",          sub: "shell.open, notifications" },
+          { id: "d.sse",              group: "desktop", kind: "desktop",  x:  60, y: 620, w: 280, h: 54, title: "events stream (SSE)",sub: "EventSource → /events" },
+
+          // api column
+          { id: "a.route.authcb",     group: "api",     kind: "api",      x: 460, y: 110, w: 200, h: 54, title: "route auth-callback",sub: "GET /auth/callback" },
+          { id: "a.route.events",     group: "api",     kind: "api",      x: 680, y: 110, w: 200, h: 54, title: "route events",       sub: "GET /events (SSE)" },
+          { id: "a.rpc.auth",         group: "api",     kind: "api",      x: 460, y: 190, w: 200, h: 54, title: "rpc.auth",           sub: "getAuthUrl, getStatus, …" },
+          { id: "a.rpc.streamer",     group: "api",     kind: "api",      x: 680, y: 190, w: 200, h: 54, title: "rpc.streamer",       sub: "listFollowed, getStreams" },
+          { id: "a.rpc.settings",     group: "api",     kind: "api",      x: 460, y: 260, w: 200, h: 54, title: "rpc.settings",       sub: "get, update" },
+          { id: "a.rpc.exclusion",    group: "api",     kind: "api",      x: 680, y: 260, w: 200, h: 54, title: "rpc.notificationExclusion", sub: "add, remove, list" },
+          { id: "a.svc.twitchauth",   group: "api",     kind: "api",      x: 460, y: 340, w: 200, h: 54, title: "services/twitch-auth",sub: "OAuth + tokens" },
+          { id: "a.svc.streamer",     group: "api",     kind: "api",      x: 680, y: 340, w: 200, h: 54, title: "services/streamer",  sub: "Helix client" },
+          { id: "a.svc.poll",         group: "api",     kind: "api",      x: 460, y: 420, w: 200, h: 54, title: "services/poll-worker",sub: "BullMQ stream-poll" },
+          { id: "a.svc.conn",         group: "api",     kind: "api",      x: 680, y: 420, w: 200, h: 54, title: "services/connection-manager", sub: "SSE registry" },
+          { id: "a.db.queries",       group: "api",     kind: "api",      x: 570, y: 510, w: 200, h: 54, title: "db/queries",         sub: "DbAuthToken, …" },
+
+          // infra
+          { id: "i.postgres",         group: "infra",   kind: "infra",    x: 470, y: 680, w: 200, h: 60, title: "Postgres",           sub: "Prisma schema" },
+          { id: "i.redis",            group: "infra",   kind: "infra",    x: 690, y: 680, w: 200, h: 60, title: "Redis",              sub: "pub/sub + BullMQ" },
+
+          // external
+          { id: "x.twitch.oauth",     group: "external",kind: "external", x: 980, y: 110, w: 160, h: 54, title: "Twitch OAuth",       sub: "id.twitch.tv" },
+          { id: "x.twitch.helix",     group: "external",kind: "external", x: 980, y: 190, w: 160, h: 54, title: "Twitch Helix",       sub: "api.twitch.tv/helix" },
+          { id: "x.browser",          group: "external",kind: "external", x: 980, y: 540, w: 160, h: 54, title: "Navegador",          sub: "Tauri shell.open" },
+        ],
+        flows: [
+          {
+            id: "login",
+            label: "Login com Twitch",
+            description: "OAuth via navegador, polling de status e captura da sessão.",
+            steps: [
+              { from: "d.routes.auth",   to: "d.orpc",          via: "rpc.auth.getAuthUrl()",          payload: "—",                                 note: "Botão Entrar dispara a chamada." },
+              { from: "d.orpc",          to: "a.rpc.auth",      via: "POST /rpc/auth.getAuthUrl",      payload: "{}",                                note: "ORPC procedure pública." },
+              { from: "a.rpc.auth",      to: "a.svc.twitchauth",via: "TwitchAuth.generateState() + getAuthorizationUrl(state)", payload: "state guardado no Redis (ttl)", note: "" },
+              { from: "a.svc.twitchauth",to: "i.redis",         via: "SET auth:state:<uuid>",          payload: "marker temporário",                 note: "Usado depois para validar o callback." },
+              { from: "a.rpc.auth",      to: "d.orpc",          via: "{ url, state }",                 payload: "url do Twitch OAuth",               note: "" },
+              { from: "d.routes.auth",   to: "d.tauri",         via: "shell.open(url)",                payload: "url",                               note: "Abre o navegador externo do SO." },
+              { from: "d.tauri",         to: "x.browser",       via: "abre página",                    payload: "—",                                 note: "Usuário autoriza no Twitch." },
+              { from: "x.browser",       to: "x.twitch.oauth",  via: "login + consent",                payload: "—",                                 note: "" },
+              { from: "x.twitch.oauth",  to: "a.route.authcb",  via: "GET /auth/callback?code&state",  payload: "code + state",                      note: "Redirect URI registrada." },
+              { from: "a.route.authcb",  to: "a.svc.twitchauth",via: "exchangeCode + getUser + saveToken", payload: "code → tokens + user",         note: "" },
+              { from: "a.svc.twitchauth",to: "i.postgres",      via: "DbAuthToken.upsert",             payload: "{ user_id, session_id, access_token, refresh_token, expires_at }", note: "session_id é o que o cliente vai usar." },
+              { from: "a.route.authcb",  to: "a.svc.poll",      via: "scheduleUserPoll(session_id)",   payload: "PollJobData",                       note: "Enfileira polling recorrente." },
+              { from: "a.svc.poll",      to: "i.redis",         via: "BullMQ queue stream-poll",        payload: "delay 0",                           note: "" },
+              { from: "d.routes.auth",   to: "a.rpc.auth",      via: "rpc.auth.getStatus({ state })",  payload: "polling a cada Xs",                 note: "Cliente aguarda o callback completar." },
+              { from: "a.rpc.auth",      to: "a.svc.twitchauth",via: "claimSession(state)",            payload: "consome o state",                   note: "" },
+              { from: "a.svc.twitchauth",to: "i.redis",         via: "GETDEL auth:state:<uuid>",       payload: "→ session_id",                      note: "" },
+              { from: "a.rpc.auth",      to: "d.orpc",          via: "{ authenticated: true, session_id }", payload: "session_id",                  note: "" },
+              { from: "d.orpc",          to: "d.store",         via: "session.set({ sessionId })",     payload: "persistido localmente",             note: "Próximas chamadas vão com Authorization: Session <id>." },
+            ],
+          },
+          {
+            id: "stream-online",
+            label: "Notificação: streamer ficou online",
+            description: "Worker faz polling no Helix, detecta diff e publica para o desktop via SSE.",
+            steps: [
+              { from: "i.redis",          to: "a.svc.poll",      via: "BullMQ pega job stream-poll",    payload: "{ userId, sessionId }",             note: "Worker concurrency=10." },
+              { from: "a.svc.poll",       to: "a.db.queries",    via: "DbAuthToken.getBySessionId",     payload: "→ token",                           note: "" },
+              { from: "a.db.queries",     to: "i.postgres",      via: "SELECT auth_token",              payload: "row",                               note: "" },
+              { from: "a.svc.poll",       to: "a.svc.twitchauth",via: "refreshToken (se expirado)",     payload: "refresh_token",                     note: "Opcional." },
+              { from: "a.svc.poll",       to: "a.svc.streamer",  via: "getFollowedChannels + getStreams",payload: "broadcaster_ids[]",                 note: "" },
+              { from: "a.svc.streamer",   to: "x.twitch.helix",  via: "GET /helix/streams?user_id=…",   payload: "Bearer access_token",               note: "" },
+              { from: "x.twitch.helix",   to: "a.svc.streamer",  via: "streams[]",                      payload: "live state por broadcaster",        note: "" },
+              { from: "a.svc.poll",       to: "a.db.queries",    via: "DbNotificationExclusion.isExcluded", payload: "user_id, broadcaster_id",       note: "Filtra silenciados." },
+              { from: "a.svc.poll",       to: "i.redis",         via: "PUBLISH stream:<user_id>",       payload: '{ type: "stream.online", broadcasterUserLogin, gameName, … }', note: "Diff entre snapshot anterior e atual." },
+              { from: "i.redis",          to: "a.route.events",  via: "subscribe(stream:<user_id>)",    payload: "mensagem",                          note: "Conexão SSE viva por usuário." },
+              { from: "a.route.events",   to: "d.sse",           via: "SSE data: <event>",              payload: "event JSON",                        note: "Mantida com ping a cada 30s." },
+              { from: "d.sse",            to: "d.store",         via: "session/notifications.update",   payload: "evento",                            note: "" },
+              { from: "d.store",          to: "d.routes.home",   via: "re-render lista de lives",       payload: "—",                                 note: "" },
+              { from: "d.routes.home",    to: "d.tauri",         via: "notification.send",              payload: "{ title, body }",                   note: "Notificação nativa do SO." },
+              { from: "a.svc.poll",       to: "i.redis",         via: "enqueue próximo job (delay 120s)",payload: "jobId poll-<sessionId>",            note: "Ciclo se mantém enquanto sessão existir." },
+            ],
+          },
+          {
+            id: "exclude-streamer",
+            label: "Excluir streamer das notificações",
+            description: "Usuário silencia um canal específico.",
+            steps: [
+              { from: "d.routes.home",    to: "d.orpc",          via: "rpc.notificationExclusion.add", payload: "{ broadcasterUserId }",             note: "Botão no card do streamer." },
+              { from: "d.orpc",           to: "a.rpc.exclusion", via: "POST /rpc/notificationExclusion.add", payload: "Session <id> + body",          note: "Procedure protegida." },
+              { from: "a.rpc.exclusion",  to: "a.db.queries",    via: "DbNotificationExclusion.add",    payload: "{ user_id, broadcaster_id }",       note: "" },
+              { from: "a.db.queries",     to: "i.postgres",      via: "INSERT notification_exclusion", payload: "ON CONFLICT DO NOTHING",            note: "" },
+              { from: "a.rpc.exclusion",  to: "d.orpc",          via: "ok",                             payload: "—",                                 note: "" },
+              { from: "d.orpc",           to: "d.store",         via: "invalida cache / atualiza lista",payload: "—",                                 note: "Próximo poll já ignora esse broadcaster." },
+            ],
+          },
+          {
+            id: "update-settings",
+            label: "Atualizar settings do usuário",
+            description: "Persistência das preferências de notificação.",
+            steps: [
+              { from: "d.routes.settings",to: "d.orpc",          via: "rpc.settings.update",            payload: "{ … patch }",                       note: "Form submit." },
+              { from: "d.orpc",           to: "a.rpc.settings",  via: "POST /rpc/settings.update",      payload: "Session <id> + body",               note: "" },
+              { from: "a.rpc.settings",   to: "a.db.queries",    via: "DbUserSettings.upsert",          payload: "patch validado",                    note: "Schema arktype no boundary." },
+              { from: "a.db.queries",     to: "i.postgres",      via: "INSERT … ON CONFLICT UPDATE",    payload: "user_settings row",                 note: "" },
+              { from: "a.rpc.settings",   to: "d.orpc",          via: "settings atualizados",           payload: "objeto completo",                   note: "" },
+              { from: "d.orpc",           to: "d.store",         via: "settings.set(next)",             payload: "—",                                 note: "Zustand atualiza UI." },
+            ],
+          },
+          {
+            id: "logout",
+            label: "Logout",
+            description: "Encerra sessão, conexão SSE e job de polling.",
+            steps: [
+              { from: "d.routes.settings",to: "d.orpc",          via: "rpc.auth.logout()",              payload: "—",                                 note: "" },
+              { from: "d.orpc",           to: "a.rpc.auth",      via: "POST /rpc/auth.logout",          payload: "Session <id>",                      note: "" },
+              { from: "a.rpc.auth",       to: "a.svc.twitchauth",via: "deleteToken(session_id)",       payload: "—",                                 note: "" },
+              { from: "a.svc.twitchauth", to: "a.db.queries",    via: "DbAuthToken.delete",             payload: "—",                                 note: "" },
+              { from: "a.db.queries",     to: "i.postgres",      via: "DELETE auth_token",              payload: "—",                                 note: "" },
+              { from: "a.svc.twitchauth", to: "a.svc.conn",      via: "connectionManager.get(userId).abort()", payload: "—",                          note: "Fecha SSE existente." },
+              { from: "a.svc.conn",       to: "d.sse",           via: "stream.abort()",                 payload: "—",                                 note: "Cliente vê desconexão." },
+              { from: "a.svc.twitchauth", to: "i.redis",         via: "remove job poll-<sessionId>",    payload: "—",                                 note: "Para o ciclo do worker." },
+              { from: "d.orpc",           to: "d.store",         via: "session.clear()",                payload: "—",                                 note: "Navega para /auth." },
+            ],
+          },
+        ],
+      };
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Render
+      // ─────────────────────────────────────────────────────────────────────────
+      const svg = document.getElementById("canvas");
+      const NS = "http://www.w3.org/2000/svg";
+      const nodeById = Object.fromEntries(MODEL.nodes.map((n) => [n.id, n]));
+
+      function el(tag, attrs = {}, children = []) {
+        const e = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        for (const c of children) e.appendChild(c);
+        return e;
+      }
+
+      function center(n) { return { x: n.x + n.w / 2, y: n.y + n.h / 2 }; }
+      function edgeKey(a, b) { return a + "→" + b; }
+
+      // groups
+      for (const g of MODEL.groups) {
+        svg.appendChild(el("rect", { x: g.x, y: g.y, width: g.w, height: g.h, rx: 14, ry: 14, class: "group-box" }));
+        svg.appendChild(el("text", { x: g.x + 14, y: g.y + 22, class: "group-label" })).textContent = g.label;
+      }
+
+      // build all unique edges from all flows (so unused ones remain dimmed)
+      const allEdges = new Map(); // key → { from, to, pathEl, labelEl }
+      for (const f of MODEL.flows) {
+        for (const s of f.steps) {
+          const k = edgeKey(s.from, s.to);
+          if (!allEdges.has(k)) allEdges.set(k, { from: s.from, to: s.to });
+        }
+      }
+
+      // draw edges with curved paths
+      const edgeLayer = el("g");
+      svg.appendChild(edgeLayer);
+      const edgeEls = {};
+      for (const [k, e] of allEdges) {
+        const a = nodeById[e.from], b = nodeById[e.to];
+        if (!a || !b) continue;
+        const ca = center(a), cb = center(b);
+        // anchor on side edge of rect for cleaner routing
+        const ax = ca.x < cb.x ? a.x + a.w : a.x;
+        const bx = ca.x < cb.x ? b.x : b.x + b.w;
+        const ay = ca.y, by = cb.y;
+        const dx = Math.abs(bx - ax);
+        const c1x = ax + (bx > ax ? 1 : -1) * Math.min(120, dx * 0.5);
+        const c2x = bx + (bx > ax ? -1 : 1) * Math.min(120, dx * 0.5);
+        const d = `M ${ax} ${ay} C ${c1x} ${ay}, ${c2x} ${by}, ${bx} ${by}`;
+        const path = el("path", { d, class: "edge", id: "edge-" + k });
+        edgeLayer.appendChild(path);
+        edgeEls[k] = path;
+      }
+
+      // draw nodes on top
+      const nodeEls = {};
+      for (const n of MODEL.nodes) {
+        const g = el("g", { class: "node kind-" + n.kind, "data-id": n.id, transform: `translate(${n.x},${n.y})` });
+        g.appendChild(el("rect", { width: n.w, height: n.h, rx: 10, ry: 10 }));
+        const t1 = el("text", { x: 12, y: 22, class: "title" }); t1.textContent = n.title; g.appendChild(t1);
+        const t2 = el("text", { x: 12, y: 40, class: "sub" });   t2.textContent = n.sub;   g.appendChild(t2);
+        svg.appendChild(g);
+        nodeEls[n.id] = g;
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Interaction
+      // ─────────────────────────────────────────────────────────────────────────
+      const list = document.getElementById("flow-list");
+      const details = document.getElementById("details");
+
+      let activeFlow = null;
+      let activeStep = -1;
+      let playTimer = null;
+
+      for (const f of MODEL.flows) {
+        const b = document.createElement("button");
+        b.className = "flow-btn";
+        b.dataset.flow = f.id;
+        b.innerHTML = `<div class="ftitle">${f.label}</div><div class="fdesc">${f.description}</div>`;
+        b.onclick = () => selectFlow(f.id);
+        list.appendChild(b);
+      }
+
+      function clearHighlights() {
+        for (const g of Object.values(nodeEls)) g.classList.remove("lit", "dim");
+        for (const p of Object.values(edgeEls)) p.classList.remove("lit", "dim", "pulse");
+      }
+
+      function paintFlow(flow, upToStep /* inclusive, -1 = none */) {
+        clearHighlights();
+        const touchedNodes = new Set();
+        const touchedEdges = new Set();
+        for (let i = 0; i <= upToStep; i++) {
+          const s = flow.steps[i];
+          touchedNodes.add(s.from); touchedNodes.add(s.to);
+          touchedEdges.add(edgeKey(s.from, s.to));
+        }
+        for (const id of Object.keys(nodeEls)) {
+          if (touchedNodes.has(id)) nodeEls[id].classList.add("lit");
+          else nodeEls[id].classList.add("dim");
+        }
+        for (const k of Object.keys(edgeEls)) {
+          if (touchedEdges.has(k)) edgeEls[k].classList.add("lit");
+          else edgeEls[k].classList.add("dim");
+        }
+        // pulse the current edge
+        if (upToStep >= 0) {
+          const s = flow.steps[upToStep];
+          const k = edgeKey(s.from, s.to);
+          edgeEls[k]?.classList.add("pulse");
+        }
+      }
+
+      function renderDetails(flow) {
+        const html = [
+          `<h2>${flow.label}</h2>`,
+          `<div class="summary">${flow.description}</div>`,
+        ];
+        flow.steps.forEach((s, i) => {
+          const from = nodeById[s.from]?.title ?? s.from;
+          const to = nodeById[s.to]?.title ?? s.to;
+          html.push(`
+            <div class="step ${i === activeStep ? "active" : ""}" data-step="${i}">
+              <div class="head"><span class="num">${i + 1}</span> <strong>${from}</strong> <span class="arrow">→</span> <strong>${to}</strong></div>
+              <div class="via">${escapeHtml(s.via)}</div>
+              ${s.payload && s.payload !== "—" ? `<div class="payload">payload: ${escapeHtml(s.payload)}</div>` : ""}
+              ${s.note ? `<div class="note">${escapeHtml(s.note)}</div>` : ""}
+            </div>
+          `);
+        });
+        details.innerHTML = html.join("");
+        details.querySelectorAll(".step").forEach((stepEl) => {
+          stepEl.addEventListener("click", () => {
+            stopPlay();
+            activeStep = Number(stepEl.dataset.step);
+            paintFlow(flow, activeStep);
+            renderDetails(flow);
+            stepEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          });
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      }
+
+      function selectFlow(id) {
+        stopPlay();
+        activeFlow = MODEL.flows.find((f) => f.id === id);
+        activeStep = activeFlow.steps.length - 1; // show full path by default
+        document.querySelectorAll(".flow-btn").forEach((b) => b.classList.toggle("active", b.dataset.flow === id));
+        paintFlow(activeFlow, activeStep);
+        renderDetails(activeFlow);
+      }
+
+      function play() {
+        if (!activeFlow) return;
+        stopPlay();
+        activeStep = -1;
+        const tick = () => {
+          activeStep += 1;
+          if (activeStep >= activeFlow.steps.length) { stopPlay(); activeStep = activeFlow.steps.length - 1; paintFlow(activeFlow, activeStep); renderDetails(activeFlow); return; }
+          paintFlow(activeFlow, activeStep);
+          renderDetails(activeFlow);
+          playTimer = setTimeout(tick, 1100);
+        };
+        tick();
+      }
+      function stopPlay() { if (playTimer) { clearTimeout(playTimer); playTimer = null; } }
+
+      document.getElementById("btn-play").onclick = play;
+      document.getElementById("btn-reset").onclick = () => {
+        stopPlay();
+        activeFlow = null; activeStep = -1;
+        clearHighlights();
+        document.querySelectorAll(".flow-btn").forEach((b) => b.classList.remove("active"));
+        details.innerHTML = `<h2>Selecione um fluxo</h2><div class="summary">Clique em um fluxo à esquerda para ver as etapas e como os dados trafegam entre os packages.</div>`;
+      };
+
+      // default
+      selectFlow(MODEL.flows[0].id);
+    </script>
+  </body>
+</html>

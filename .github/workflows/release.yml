@@ -18,7 +18,7 @@ jobs:
         platform: [ubuntu-22.04, windows-latest]
 
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     env:
       VITE_API_BASE_URL: https://streampeek-production.up.railway.app
@@ -51,13 +51,16 @@ jobs:
       - name: Install JS dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build & release
+      - name: Build frontend
+        working-directory: apps/desktop
+        run: bun run vite build
+
+      - name: Build tauri & release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: apps/desktop
-          tauriScript: bun tauri
           tagName: ${{ github.ref_name }}
           releaseName: "StreamPeek ${{ github.ref_name }}"
           releaseBody: |
