@@ -12,15 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: macos-latest
-            args: "--target aarch64-apple-darwin"
-          - platform: macos-latest
-            args: "--target x86_64-apple-darwin"
-          - platform: ubuntu-22.04
-            args: ""
-          - platform: windows-latest
-            args: ""
+        platform: [ubuntu-22.04, windows-latest]
 
     runs-on: ${{ matrix.platform }}
 
@@ -34,10 +26,8 @@ jobs:
         with:
           bun-version: "1.2"
 
-      - name: Install Rust (with macOS targets)
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -50,10 +40,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
+            libayatana-appindicator3-dev \
             librsvg2-dev \
-            patchelf \
-            libayatana-appindicator3-dev
+            patchelf
 
       - name: Install JS dependencies
         run: bun install --frozen-lockfile
@@ -69,9 +58,7 @@ jobs:
           releaseBody: |
             Beta release. Unsigned binaries — your OS may show a security warning on first launch.
 
-            - **macOS:** right-click the app → Open → Open (bypasses Gatekeeper once).
             - **Windows:** SmartScreen → "More info" → "Run anyway".
             - **Linux:** `.deb`/`.rpm` install normally; `.AppImage` needs `chmod +x` first.
           releaseDraft: true
           prerelease: true
-          args: ${{ matrix.args }}
