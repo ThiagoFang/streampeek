@@ -3,7 +3,7 @@ import { DbNotificationExclusion } from "../../db/queries/notification-exclusion
 import { DbUserSettings } from "../../db/queries/user-settings";
 import { bullMQQueueConnection, bullMQWorkerConnection, redis } from "../../lib/redis";
 import { SessionResolver } from "../session-resolver-runtime";
-import { TwitchStreamer } from "../streamer";
+import { TwitchStreamerClient } from "../streamer";
 import { PollProcessor } from "./processor";
 import { createPollScheduler } from "./scheduler";
 import type { PollJobData } from "./types";
@@ -15,8 +15,8 @@ const pollProcessor = new PollProcessor({
     const token = await SessionResolver.byUserId(userId);
     return token ? { userId: token.user_id, accessToken: token.access_token } : null;
   },
-  getFollowedChannels: TwitchStreamer.getFollowedChannels,
-  getStreams: TwitchStreamer.getStreams,
+  getFollowedChannels: TwitchStreamerClient.getFollowedChannels,
+  getStreams: TwitchStreamerClient.getStreams,
   getNotificationsEnabled: async (userId) => {
     const settings = await DbUserSettings.getByUserId(userId);
     return settings.notifications_enabled;
