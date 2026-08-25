@@ -1,10 +1,12 @@
 import { DbAuthToken } from "../../db/queries/auth-token";
 import { DbNotificationExclusion } from "../../db/queries/notification-exclusion";
+import { DbUserSettings } from "../../db/queries/user-settings";
 import { redis } from "../../lib/redis";
 import { TwitchAuth } from "../twitch-auth";
 import { TwitchStreamer } from "../streamer";
 import { detectStreamTransitions } from "./stream-detector";
-import type { LiveStreamerSet, PollJobData, StreamEvent } from "./types";
+import { shouldNotify } from "./notification-policy";
+import type { LiveStreamerSet, PollJobData, StreamEvent, StreamEventDelivery } from "./types";
 
 interface PollingContext {
   userId: string;
@@ -77,13 +79,25 @@ export class PollProcessor {
   }
 
   private async publishEvents(userId: string, events: StreamEvent[]) {
-    for (const event of events) {
-      if (event.type === "stream.online") {
-        const excluded = await DbNotificationExclusion.isExcluded(userId, event.broadcasterUserId);
-        if (excluded) continue;
-      }
+    if (!events.length) return;
 
-      await redis.publish(`stream:${userId}`, JSON.stringify(event));
+    const settings = await DbUserSettings.getByUserId(userId);
+
+    for (const event of events) {
+      const streamerExcluded =
+        event.type === "stream.online" && settings.notifications_enabled
+          ? await DbNotificationExclusion.isExcluded(userId, event.broadcasterUserId)
+          : false;
+
+      const delivery: StreamEventDelivery = {
+        ...event,
+        shouldNotify: shouldNotify(event, {
+          notificationsEnabled: settings.notifications_enabled,
+          streamerExcluded,
+        }),
+      };
+
+      await redis.publish(`stream:${userId}`, JSON.stringify(delivery));
     }
   }
 }

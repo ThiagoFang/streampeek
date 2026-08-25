@@ -17,3 +17,7 @@ export interface StreamEvent {
   broadcasterUserName: string;
   gameName: string;
 }
+
+export interface StreamEventDelivery extends StreamEvent {
+  shouldNotify: boolean;
+}

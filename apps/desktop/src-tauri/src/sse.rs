@@ -16,6 +16,12 @@ struct StreamEvent {
     broadcaster_user_name: Option<String>,
     broadcaster_user_login: Option<String>,
     game_name: Option<String>,
+    #[serde(rename = "shouldNotify", default = "notification_enabled_by_default")]
+    should_notify: bool,
+}
+
+fn notification_enabled_by_default() -> bool {
+    true
 }
 
 #[derive(Clone, Serialize)]
@@ -94,7 +100,6 @@ impl SseClient {
             task.abort();
         }
     }
-
 }
 
 async fn connect_and_process(
@@ -183,7 +188,12 @@ async fn update_online_state(
     !streamers.is_empty()
 }
 
-fn send_notification(app_handle: &AppHandle, display_name: &str, login: &str, game_name: &Option<String>) {
+fn send_notification(
+    app_handle: &AppHandle,
+    display_name: &str,
+    login: &str,
+    game_name: &Option<String>,
+) {
     let body = game_name
         .as_ref()
         .map(|g| format!("Entrou ao vivo — {}", g))
@@ -209,7 +219,14 @@ async fn handle_event(
         "stream.online" => {
             update_online_state(&payload.login, true, online_streamers).await;
             crate::update_tray_icon(app_handle, true);
-            send_notification(app_handle, &payload.display_name, &payload.login, &event.game_name);
+            if event.should_notify {
+                send_notification(
+                    app_handle,
+                    &payload.display_name,
+                    &payload.login,
+                    &event.game_name,
+                );
+            }
             let _ = app_handle.emit("streamer-online", &payload);
         }
         "stream.offline" => {
@@ -218,5 +235,26 @@ async fn handle_event(
             let _ = app_handle.emit("streamer-offline", &payload);
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_sse_event;
+
+    #[test]
+    fn reads_notification_preference_from_event() {
+        let event = parse_sse_event(r#"data: {"type":"stream.online","shouldNotify":false}"#)
+            .expect("event should be valid");
+
+        assert!(!event.should_notify);
+    }
+
+    #[test]
+    fn keeps_notifications_enabled_for_older_events() {
+        let event =
+            parse_sse_event(r#"data: {"type":"stream.online"}"#).expect("event should be valid");
+
+        assert!(event.should_notify);
     }
 }
