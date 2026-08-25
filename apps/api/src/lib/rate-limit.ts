@@ -1,45 +1,57 @@
 import { redis } from "./redis";
 
-const RATE_LIMIT_WINDOW = 60;
-const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+const RATE_LIMIT_MAX_REQUESTS = 60;
 
-export async function checkRateLimit(key: string): Promise<boolean> {
-  const fullKey = `ratelimit:${key}`;
-  const current = await redis.incr(fullKey);
+const CONSUME_RATE_LIMIT_SCRIPT = `
+local current = redis.call("INCR", KEYS[1])
+local ttl = redis.call("TTL", KEYS[1])
 
-  if (current === 1) {
-    await redis.expire(fullKey, RATE_LIMIT_WINDOW);
-  }
+if ttl < 0 then
+  redis.call("EXPIRE", KEYS[1], ARGV[1])
+  ttl = tonumber(ARGV[1])
+end
 
-  return current <= RATE_LIMIT_MAX;
-}
+return { current, ttl }
+`;
 
-export async function checkRateLimitDetailed(key: string): Promise<{
+export interface RateLimitDecision {
   allowed: boolean;
   remaining: number;
-  resetIn: number;
-}> {
-  const fullKey = `ratelimit:${key}`;
-  const current = await redis.incr(fullKey);
+  retryAfter: number;
+}
 
-  if (current === 1) {
-    await redis.expire(fullKey, RATE_LIMIT_WINDOW);
+export async function consumeRateLimit(key: string): Promise<RateLimitDecision> {
+  const fullKey = `ratelimit:${key}`;
+  const result = await redis.eval(CONSUME_RATE_LIMIT_SCRIPT, 1, fullKey, RATE_LIMIT_WINDOW_SECONDS);
+
+  if (!Array.isArray(result) || result.length !== 2) {
+    throw new Error("Invalid rate limit response from Redis");
   }
 
-  const ttl = await redis.ttl(fullKey);
-  const remaining = Math.max(0, RATE_LIMIT_MAX - current);
+  const current = Number(result[0]);
+  const ttl = Number(result[1]);
 
   return {
-    allowed: current <= RATE_LIMIT_MAX,
-    remaining,
-    resetIn: ttl > 0 ? ttl : RATE_LIMIT_WINDOW,
+    allowed: current <= RATE_LIMIT_MAX_REQUESTS,
+    remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - current),
+    retryAfter: Math.max(1, ttl),
   };
 }
 
 export function getClientKey(headers: Headers): string {
   const auth = headers.get("Authorization");
   if (auth?.startsWith("Session ")) {
-    return `session:${auth.slice(8)}`;
+    const sessionId = auth.slice(8).trim();
+    if (sessionId) return `session:${sessionId}`;
   }
-  return `ip:${headers.get("x-forwarded-for") || "unknown"}`;
+
+  const forwardedIp = headers
+    .get("x-forwarded-for")
+    ?.split(",")
+    .map((value) => value.trim())
+    .find(Boolean);
+  const realIp = headers.get("x-real-ip")?.trim();
+
+  return `ip:${forwardedIp || realIp || "unknown"}`;
 }

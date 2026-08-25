@@ -4,7 +4,6 @@ import { type } from "arktype";
 import { RPCHandler } from "@orpc/server/fetch";
 import { envVariables } from "./lib/env";
 import { router } from "./rpc/router";
-import { checkRateLimit, getClientKey } from "./lib/rate-limit";
 import { handleAuthCallback } from "./routes/auth-callback";
 import { handleEvents } from "./routes/events";
 import { handleHealth } from "./routes/health";
@@ -30,12 +29,9 @@ app.get("/health", handleHealth);
 
 const rpcHandler = new RPCHandler(router);
 
-app.all("/rpc/*", async (c) => {
-  const key = getClientKey(c.req.raw.headers);
-  if (!(await checkRateLimit(key))) {
-    return c.json({ error: "RATE_LIMITED" }, 429);
-  }
+app.use("/rpc/*", rateLimitMiddleware());
 
+app.all("/rpc/*", async (c) => {
   const result = await rpcHandler.handle(c.req.raw, {
     prefix: "/rpc",
     context: { reqHeaders: c.req.raw.headers },
