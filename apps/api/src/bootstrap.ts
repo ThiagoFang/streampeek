@@ -9,16 +9,12 @@ import { log } from "./lib/logger";
 
 export async function initializeApp() {
   const worker = createPollWorker();
-
-  getConnectionManager();
+  const connectionManager = getConnectionManager();
 
   setupGracefulShutdown(worker);
 
-  TwitchAuth.onLogout = async (userId) => {
-    const token = await DbAuthToken.getByUserId(userId);
-    if (token) {
-      await removeUserPoll(token.session_id);
-    }
+  TwitchAuth.onLogout = async ({ userId, sessionId }) => {
+    await Promise.all([removeUserPoll(sessionId), connectionManager.close(userId)]);
   };
 
   await scheduleExistingPolls();

@@ -28,5 +28,8 @@ export async function subscribe(channel: string, handler: (message: string) => v
   const subscriber = redisSub.duplicate();
   await subscriber.subscribe(channel);
   subscriber.on("message", (_, message) => handler(message));
-  return () => subscriber.unsubscribe(channel).then(() => subscriber.quit());
+  return async () => {
+    await subscriber.unsubscribe(channel);
+    await subscriber.quit();
+  };
 }

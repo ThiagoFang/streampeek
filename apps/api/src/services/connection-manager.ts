@@ -1,9 +1,9 @@
-interface Connection {
+export interface Connection {
   abort: () => void;
-  unsubscribe: () => void;
+  unsubscribe: () => Promise<void>;
 }
 
-class ConnectionManager {
+export class ConnectionManager {
   private connections = new Map<string, Connection>();
 
   get(userId: string): Connection | undefined {
@@ -14,8 +14,18 @@ class ConnectionManager {
     this.connections.set(userId, connection);
   }
 
-  delete(userId: string) {
+  delete(userId: string, expectedConnection?: Connection) {
+    if (expectedConnection && this.connections.get(userId) !== expectedConnection) return;
     this.connections.delete(userId);
+  }
+
+  async close(userId: string) {
+    const connection = this.connections.get(userId);
+    if (!connection) return;
+
+    this.connections.delete(userId);
+    connection.abort();
+    await connection.unsubscribe();
   }
 }
 

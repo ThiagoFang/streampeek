@@ -10,8 +10,13 @@ const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
 
 const PENDING_STATE_TTL = 600;
 
+interface LogoutContext {
+  userId: string;
+  sessionId: string;
+}
+
 export const TwitchAuth = {
-  onLogout: null as ((userId: string) => void) | null,
+  onLogout: null as ((context: LogoutContext) => Promise<void>) | null,
 
   async generateState() {
     const state = crypto.randomUUID();
@@ -126,6 +131,8 @@ export const TwitchAuth = {
   async deleteToken(sessionId: string) {
     const token = await DbAuthToken.getBySessionId(sessionId);
     await DbAuthToken.deleteBySessionId(sessionId);
-    if (token) this.onLogout?.(token.user_id);
+    if (token && this.onLogout) {
+      await this.onLogout({ userId: token.user_id, sessionId: token.session_id });
+    }
   },
 };
