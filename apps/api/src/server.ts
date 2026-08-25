@@ -1,57 +1,30 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { type } from "arktype";
 import { RPCHandler } from "@orpc/server/fetch";
+import { initializeApp } from "./bootstrap";
+import { createHttpApp } from "./http-app";
 import { envVariables } from "./lib/env";
+import { log } from "./lib/logger";
+import { rateLimitMiddleware } from "./middleware/rate-limit";
 import { router } from "./rpc/router";
 import { handleAuthCallback } from "./routes/auth-callback";
 import { handleEvents } from "./routes/events";
 import { handleHealth } from "./routes/health";
-import { rateLimitMiddleware } from "./middleware/rate-limit";
-import { initializeApp } from "./bootstrap";
-import { log } from "./lib/logger";
-
-const app = new Hono();
-
-app.use(
-  "*",
-  cors({
-    origin: envVariables.CORS_ORIGIN,
-    credentials: true,
-  }),
-);
-
-app.get("/auth/twitch/callback", rateLimitMiddleware(), handleAuthCallback);
-
-app.get("/events", rateLimitMiddleware(), handleEvents);
-
-app.get("/health", handleHealth);
 
 const rpcHandler = new RPCHandler(router);
-
-app.use("/rpc/*", rateLimitMiddleware());
-
-app.all("/rpc/*", async (c) => {
-  const result = await rpcHandler.handle(c.req.raw, {
-    prefix: "/rpc",
-    context: { reqHeaders: c.req.raw.headers },
-  });
-  if (result.matched) return result.response;
-  return c.json({ error: "NOT_FOUND" }, 404);
-});
-
-app.onError((err, c) => {
-  if (err instanceof type.errors) {
-    log.warn({ details: err.summary }, "Validation error");
-    return c.json({ error: "VALIDATION_ERROR" }, 400);
-  }
-
-  if ("status" in err && typeof err.status === "number") {
-    return c.json({ error: "EXTERNAL_API_ERROR" }, 502);
-  }
-
-  log.error({ err }, "Unhandled error in server");
-  return c.json({ error: "INTERNAL_ERROR" }, 500);
+const app = createHttpApp({
+  corsOrigins: envVariables.CORS_ORIGIN,
+  rateLimit: rateLimitMiddleware(),
+  authCallback: handleAuthCallback,
+  events: handleEvents,
+  health: handleHealth,
+  rpcHandler: {
+    handle: (request, options) => rpcHandler.handle(request, options),
+  },
+  reportValidationError: (summary) => {
+    log.warn({ details: summary }, "Validation error");
+  },
+  reportUnhandledError: (err) => {
+    log.error({ err }, "Unhandled error in server");
+  },
 });
 
 await initializeApp();
