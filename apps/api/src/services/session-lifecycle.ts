@@ -1,6 +1,6 @@
 import { getConnectionManager } from "./connection-manager";
 import { removeUserPoll, resetUserPollingState } from "./polling";
-import type { SessionInvalidationContext } from "./twitch-auth";
+import type { SessionInvalidationContext } from "./auth-session";
 
 interface SessionResources {
   removePoll: (userId: string) => Promise<unknown>;

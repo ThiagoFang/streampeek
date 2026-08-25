@@ -1,16 +1,12 @@
 import { closePolling, createPollWorker, synchronizeUserPolls } from "./services/polling";
 import { startCleanupJob } from "./services/session-cleanup";
-import { invalidateSessionResources } from "./services/session-lifecycle";
 import { getConnectionManager } from "./services/connection-manager";
-import { TwitchAuth } from "./services/twitch-auth";
 import { DbAuthToken } from "./db/queries/auth-token";
 import { db } from "./db";
 import { redis, redisSub } from "./lib/redis";
 import { log } from "./lib/logger";
 
 export async function initializeApp() {
-  TwitchAuth.onSessionInvalidated = invalidateSessionResources;
-
   await synchronizeExistingPolls();
 
   const worker = createPollWorker();

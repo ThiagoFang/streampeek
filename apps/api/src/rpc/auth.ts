@@ -1,6 +1,7 @@
 import { type } from "arktype";
 import { TwitchAuth } from "../services/twitch-auth";
 import { AuthHandshake } from "../services/auth-handshake-runtime";
+import { AuthSession } from "../services/auth-session-runtime";
 import { publicProcedure, protectedProcedure } from "./procedures";
 
 export const authRouter = {
@@ -24,6 +25,6 @@ export const authRouter = {
   })),
 
   logout: protectedProcedure.handler(async ({ context }) =>
-    TwitchAuth.deleteToken(context.token.session_id),
+    AuthSession.delete(context.token.session_id),
   ),
 };

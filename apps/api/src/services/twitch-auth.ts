@@ -7,14 +7,7 @@ import type { AuthToken } from "../db/generated/types";
 
 const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
 
-export interface SessionInvalidationContext {
-  userId: string;
-  sessionId: string;
-}
-
 export const TwitchAuth = {
-  onSessionInvalidated: null as ((context: SessionInvalidationContext) => Promise<void>) | null,
-
   getAuthorizationUrl(state: string) {
     const params = new URLSearchParams({
       client_id: envVariables.TWITCH_CLIENT_ID,
@@ -56,35 +49,6 @@ export const TwitchAuth = {
     return AuthSchemas.twitchUser.assert(data.data[0]);
   },
 
-  async saveToken(
-    tokenData: typeof AuthSchemas.tokenResponse.infer,
-    userData: typeof AuthSchemas.twitchUser.infer,
-  ) {
-    const previousToken = await DbAuthToken.getByUserId(userData.id);
-    const sessionId = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
-
-    await DbAuthToken.upsertByUserId({
-      session_id: sessionId,
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      user_id: userData.id,
-      user_login: userData.login,
-      user_display_name: userData.display_name,
-      profile_image_url: userData.profile_image_url,
-      expires_at: expiresAt,
-    });
-
-    if (previousToken && this.onSessionInvalidated) {
-      await this.onSessionInvalidated({
-        userId: previousToken.user_id,
-        sessionId: previousToken.session_id,
-      });
-    }
-
-    return sessionId;
-  },
-
   async refreshToken(token: Selectable<AuthToken>) {
     const { data } = await axios({
       method: "POST",
@@ -112,13 +76,5 @@ export const TwitchAuth = {
       refresh_token: validated.refresh_token,
       expires_at: expiresAt,
     };
-  },
-
-  async deleteToken(sessionId: string) {
-    const token = await DbAuthToken.getBySessionId(sessionId);
-    await DbAuthToken.deleteBySessionId(sessionId);
-    if (token && this.onSessionInvalidated) {
-      await this.onSessionInvalidated({ userId: token.user_id, sessionId: token.session_id });
-    }
   },
 };

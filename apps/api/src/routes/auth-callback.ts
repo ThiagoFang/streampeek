@@ -4,6 +4,7 @@ import { AuthSchemas } from "../schemas/auth";
 import { scheduleUserPoll } from "../services/polling";
 import { createLogger } from "../lib/logger";
 import { AuthHandshake } from "../services/auth-handshake-runtime";
+import { AuthSession } from "../services/auth-session-runtime";
 
 const log = createLogger({ component: "auth-callback" });
 
@@ -19,7 +20,7 @@ export async function handleAuthCallback(c: Context) {
   try {
     const tokenData = await TwitchAuth.exchangeCode(validated.code);
     const userData = await TwitchAuth.getUser(tokenData.access_token);
-    const sessionId = await TwitchAuth.saveToken(tokenData, userData);
+    const sessionId = await AuthSession.create(tokenData, userData);
     await scheduleUserPoll(userData.id);
     await AuthHandshake.publishSession(validated.state, sessionId);
 

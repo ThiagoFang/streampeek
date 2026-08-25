@@ -1,5 +1,5 @@
 import { DbAuthToken } from "../db/queries/auth-token";
-import { TwitchAuth } from "./twitch-auth";
+import { AuthSession } from "./auth-session-runtime";
 import { createLogger } from "../lib/logger";
 
 const logger = createLogger({ component: "session-cleanup" });
@@ -11,7 +11,7 @@ export async function cleanupInactiveSessions() {
 
   for (const token of expiredTokens) {
     logger.info({ sessionId: token.session_id }, "Removing expired session");
-    await TwitchAuth.deleteToken(token.session_id);
+    await AuthSession.delete(token.session_id);
   }
 }
 
