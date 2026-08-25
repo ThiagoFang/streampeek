@@ -1,9 +1,6 @@
 import axios from "redaxios";
-import type { Selectable } from "kysely";
 import { AuthSchemas } from "../schemas/auth";
 import { envVariables } from "../lib/env";
-import { DbAuthToken } from "../db/queries/auth-token";
-import type { AuthToken } from "../db/generated/types";
 
 const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
 
@@ -49,32 +46,18 @@ export const TwitchAuth = {
     return AuthSchemas.twitchUser.assert(data.data[0]);
   },
 
-  async refreshToken(token: Selectable<AuthToken>) {
+  async refreshAccessToken(refreshToken: string) {
     const { data } = await axios({
       method: "POST",
       url: "https://id.twitch.tv/oauth2/token",
       data: new URLSearchParams({
         client_id: envVariables.TWITCH_CLIENT_ID,
         client_secret: envVariables.TWITCH_CLIENT_SECRET,
-        refresh_token: token.refresh_token,
+        refresh_token: refreshToken,
         grant_type: "refresh_token",
       }),
     });
 
-    const validated = AuthSchemas.tokenResponse.assert(data);
-    const expiresAt = new Date(Date.now() + validated.expires_in * 1000);
-
-    await DbAuthToken.updateTokens(token.session_id, {
-      access_token: validated.access_token,
-      refresh_token: validated.refresh_token,
-      expires_at: expiresAt,
-    });
-
-    return {
-      ...token,
-      access_token: validated.access_token,
-      refresh_token: validated.refresh_token,
-      expires_at: expiresAt,
-    };
+    return AuthSchemas.tokenResponse.assert(data);
   },
 };
