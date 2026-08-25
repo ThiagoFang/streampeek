@@ -9,9 +9,7 @@ export const notificationExclusionRouter = {
 
   add: protectedProcedure
     .input(NotificationExclusionSchemas.add)
-    .handler(({ context, input }) =>
-      DbNotificationExclusion.add(context.token.user_id, input),
-    ),
+    .handler(({ context, input }) => DbNotificationExclusion.add(context.token.user_id, input)),
 
   remove: protectedProcedure
     .input(NotificationExclusionSchemas.remove)

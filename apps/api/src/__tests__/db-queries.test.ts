@@ -47,7 +47,11 @@ describe("DbAuthToken", () => {
 
   it("upsert overwrites existing token for same user", async () => {
     await DbAuthToken.upsertByUserId(tokenData);
-    await DbAuthToken.upsertByUserId({ ...tokenData, session_id: "new-session", access_token: "new-access" });
+    await DbAuthToken.upsertByUserId({
+      ...tokenData,
+      session_id: "new-session",
+      access_token: "new-access",
+    });
 
     const token = await DbAuthToken.getByUserId(TEST_USER_ID);
     expect(token!.session_id).toBe("new-session");

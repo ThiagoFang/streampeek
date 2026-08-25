@@ -1,11 +1,13 @@
 import { createApplicationLifecycle } from "./app-lifecycle";
 import { db } from "./db";
 import { DbAuthToken } from "./db/queries/auth-token";
-import { log } from "./lib/logger";
+import { createLogger } from "./lib/logger";
 import { redis, redisSub } from "./lib/redis";
 import { getConnectionManager } from "./services/connection-manager";
 import { closePolling, createPollWorker, synchronizeUserPolls } from "./services/polling";
 import { startCleanupJob } from "./services/session-cleanup-runtime";
+
+const log = createLogger({ component: "application" });
 
 const lifecycle = createApplicationLifecycle({
   loadPollingUserIds: async () => {

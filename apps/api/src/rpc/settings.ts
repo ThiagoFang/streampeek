@@ -9,7 +9,5 @@ export const settingsRouter = {
 
   update: protectedProcedure
     .input(type({ notifications_enabled: "boolean" }))
-    .handler(({ context, input }) =>
-      DbUserSettings.upsert(context.token.user_id, input),
-    ),
+    .handler(({ context, input }) => DbUserSettings.upsert(context.token.user_id, input)),
 };

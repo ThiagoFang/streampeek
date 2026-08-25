@@ -6,7 +6,12 @@ const envSchema = type({
   TWITCH_CLIENT_SECRET: "string > 0",
   TWITCH_REDIRECT_URI: "string > 0",
   DATABASE_URL: "string > 0",
-  CORS_ORIGIN: type("string > 0").pipe((s) => s.split(",").map((o) => o.trim()).filter(Boolean)),
+  CORS_ORIGIN: type("string > 0").pipe((s) =>
+    s
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
+  ),
   REDIS_URL: "string > 0",
 });
 

@@ -2,13 +2,14 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { initializeApp } from "./bootstrap";
 import { createHttpApp } from "./http-app";
 import { envVariables } from "./lib/env";
-import { log } from "./lib/logger";
+import { createLogger } from "./lib/logger";
 import { rateLimitMiddleware } from "./middleware/rate-limit";
 import { router } from "./rpc/router";
 import { handleAuthCallback } from "./routes/auth-callback";
 import { handleEvents } from "./routes/events";
 import { handleHealth } from "./routes/health";
 
+const log = createLogger({ component: "http" });
 const rpcHandler = new RPCHandler(router);
 const app = createHttpApp({
   corsOrigins: envVariables.CORS_ORIGIN,
