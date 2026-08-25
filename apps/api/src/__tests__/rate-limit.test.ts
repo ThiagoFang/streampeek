@@ -56,33 +56,31 @@ describe("rate-limit", () => {
 });
 
 describe("getClientKey", () => {
-  it("uses session id when Authorization header is present", () => {
-    const headers = new Headers({ Authorization: "Session abc-123" });
-    expect(getClientKey(headers)).toBe("session:abc-123");
-  });
-
-  it("uses x-forwarded-for when no session", () => {
-    const headers = new Headers({ "x-forwarded-for": "1.2.3.4" });
-    expect(getClientKey(headers)).toBe("ip:1.2.3.4");
-  });
-
-  it("uses only the original client from a proxy chain", () => {
-    const headers = new Headers({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" });
-    expect(getClientKey(headers)).toBe("ip:1.2.3.4");
-  });
-
-  it("uses x-real-ip when x-forwarded-for is unavailable", () => {
+  it("uses the client IP supplied by Railway", () => {
     const headers = new Headers({ "x-real-ip": "5.6.7.8" });
     expect(getClientKey(headers)).toBe("ip:5.6.7.8");
   });
 
-  it("ignores an empty session id", () => {
-    const headers = new Headers({ Authorization: "Session " });
+  it("accepts an IPv6 client address", () => {
+    const headers = new Headers({ "x-real-ip": "2001:db8::1" });
+    expect(getClientKey(headers)).toBe("ip:2001:db8::1");
+  });
+
+  it("does not trust unverified session or forwarded-for headers", () => {
+    const headers = new Headers({
+      Authorization: "Session attacker-controlled",
+      "x-forwarded-for": "1.2.3.4",
+      "x-real-ip": "5.6.7.8",
+    });
+    expect(getClientKey(headers)).toBe("ip:5.6.7.8");
+  });
+
+  it("does not create arbitrary Redis keys from malformed addresses", () => {
+    const headers = new Headers({ "x-real-ip": "not-an-ip" });
     expect(getClientKey(headers)).toBe("ip:unknown");
   });
 
-  it("falls back to unknown when no identifying headers", () => {
-    const headers = new Headers();
-    expect(getClientKey(headers)).toBe("ip:unknown");
+  it("falls back to a shared key outside Railway", () => {
+    expect(getClientKey(new Headers())).toBe("ip:unknown");
   });
 });

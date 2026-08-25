@@ -1,5 +1,5 @@
 import { scheduleUserPoll } from "./polling";
-import { TwitchAuth } from "./twitch-auth";
+import { TwitchAuth } from "./twitch-auth-runtime";
 import { AuthHandshake } from "./auth-handshake-runtime";
 import { createAuthCallbackService } from "./auth-callback";
 import { AuthSession } from "./auth-session-runtime";

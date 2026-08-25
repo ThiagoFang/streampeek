@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { redis } from "./redis";
 
 const RATE_LIMIT_WINDOW_SECONDS = 60;
@@ -40,18 +41,8 @@ export async function consumeRateLimit(key: string): Promise<RateLimitDecision> 
 }
 
 export function getClientKey(headers: Headers): string {
-  const auth = headers.get("Authorization");
-  if (auth?.startsWith("Session ")) {
-    const sessionId = auth.slice(8).trim();
-    if (sessionId) return `session:${sessionId}`;
-  }
-
-  const forwardedIp = headers
-    .get("x-forwarded-for")
-    ?.split(",")
-    .map((value) => value.trim())
-    .find(Boolean);
+  // Production runs behind Railway, which supplies X-Real-IP. Authorization and
+  // X-Forwarded-For are client-controlled at this point and must not identify the limiter.
   const realIp = headers.get("x-real-ip")?.trim();
-
-  return `ip:${forwardedIp || realIp || "unknown"}`;
+  return `ip:${realIp && isIP(realIp) ? realIp : "unknown"}`;
 }

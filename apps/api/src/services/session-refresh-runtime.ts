@@ -1,6 +1,6 @@
 import { DbAuthToken } from "../db/queries/auth-token";
 import { createSessionRefresher } from "./session-refresh";
-import { TwitchAuth } from "./twitch-auth";
+import { TwitchAuth } from "./twitch-auth-runtime";
 
 export const SessionRefresher = createSessionRefresher({
   requestCredentials: TwitchAuth.refreshAccessToken,

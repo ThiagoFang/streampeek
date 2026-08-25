@@ -1,7 +1,7 @@
 import { type } from "arktype";
-import { TwitchAuth } from "../services/twitch-auth";
 import { AuthHandshake } from "../services/auth-handshake-runtime";
 import { AuthSession } from "../services/auth-session-runtime";
+import { TwitchAuth } from "../services/twitch-auth-runtime";
 import { publicProcedure, protectedProcedure } from "./procedures";
 
 export const authRouter = {
