@@ -54,7 +54,7 @@ app.onError((err, c) => {
   return c.json({ error: "INTERNAL_ERROR" }, 500);
 });
 
-initializeApp();
+await initializeApp();
 
 export default {
   port: envVariables.PORT,

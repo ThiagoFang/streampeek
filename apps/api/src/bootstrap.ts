@@ -1,50 +1,67 @@
+import { createApplicationLifecycle } from "./app-lifecycle";
+import { db } from "./db";
+import { DbAuthToken } from "./db/queries/auth-token";
+import { log } from "./lib/logger";
+import { redis, redisSub } from "./lib/redis";
+import { getConnectionManager } from "./services/connection-manager";
 import { closePolling, createPollWorker, synchronizeUserPolls } from "./services/polling";
 import { startCleanupJob } from "./services/session-cleanup";
-import { getConnectionManager } from "./services/connection-manager";
-import { DbAuthToken } from "./db/queries/auth-token";
-import { db } from "./db";
-import { redis, redisSub } from "./lib/redis";
-import { log } from "./lib/logger";
 
-export async function initializeApp() {
-  await synchronizeExistingPolls();
+const lifecycle = createApplicationLifecycle({
+  loadPollingUserIds: async () => {
+    const tokens = await DbAuthToken.getAll();
+    return tokens.map((token) => token.user_id);
+  },
+  synchronizePolls: synchronizeUserPolls,
+  createPollWorker,
+  startCleanupJob,
+  closeResources: [
+    { name: "poll queue", close: closePolling },
+    { name: "SSE connections", close: () => getConnectionManager().closeAll() },
+    { name: "database", close: () => db.destroy() },
+    { name: "Redis publisher", close: () => redis.quit() },
+    { name: "Redis subscriber", close: () => redisSub.quit() },
+  ],
+});
 
-  const worker = createPollWorker();
-  const stopCleanupJob = startCleanupJob();
-  setupGracefulShutdown(worker, stopCleanupJob);
+let signalsRegistered = false;
 
-  log.info({}, "Application initialized");
-}
+function registerShutdownSignals() {
+  if (signalsRegistered) return;
+  signalsRegistered = true;
 
-async function synchronizeExistingPolls() {
-  const tokens = await DbAuthToken.getAll();
-  await synchronizeUserPolls(tokens.map((token) => token.user_id));
-  log.info({ count: tokens.length }, "Scheduled poll jobs");
-}
-
-function setupGracefulShutdown(
-  worker: ReturnType<typeof createPollWorker>,
-  stopCleanupJob: () => void,
-) {
-  let shuttingDown = false;
-
-  const shutdown = async () => {
-    if (shuttingDown) return;
-    shuttingDown = true;
+  const shutdown = () => {
     log.info({}, "Shutting down gracefully...");
 
-    stopCleanupJob();
-    await worker.close();
-    await closePolling();
-    await getConnectionManager().closeAll();
-    await db.destroy();
-    await redis.quit();
-    await redisSub.quit();
-
-    log.info({}, "Shutdown complete");
-    process.exit(0);
+    void lifecycle.shutdown().then(
+      () => {
+        log.info({}, "Shutdown complete");
+        process.exit(0);
+      },
+      (err) => {
+        log.error({ err }, "Shutdown completed with errors");
+        process.exit(1);
+      },
+    );
   };
 
-  process.on("SIGTERM", shutdown);
-  process.on("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
+}
+
+export async function initializeApp() {
+  registerShutdownSignals();
+
+  try {
+    const { scheduledUserCount } = await lifecycle.start();
+    log.info({ count: scheduledUserCount }, "Application initialized");
+  } catch (startError) {
+    try {
+      await lifecycle.shutdown();
+    } catch (shutdownError) {
+      log.error({ err: shutdownError }, "Failed to clean up after startup error");
+    }
+
+    throw startError;
+  }
 }
