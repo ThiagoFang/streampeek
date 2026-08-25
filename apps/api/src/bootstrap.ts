@@ -5,7 +5,7 @@ import { log } from "./lib/logger";
 import { redis, redisSub } from "./lib/redis";
 import { getConnectionManager } from "./services/connection-manager";
 import { closePolling, createPollWorker, synchronizeUserPolls } from "./services/polling";
-import { startCleanupJob } from "./services/session-cleanup";
+import { startCleanupJob } from "./services/session-cleanup-runtime";
 
 const lifecycle = createApplicationLifecycle({
   loadPollingUserIds: async () => {

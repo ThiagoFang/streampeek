@@ -11,13 +11,13 @@ export interface ApplicationLifecycleDependencies {
   loadPollingUserIds: () => Promise<string[]>;
   synchronizePolls: (userIds: string[]) => Promise<unknown>;
   createPollWorker: () => PollWorker;
-  startCleanupJob: () => () => void;
+  startCleanupJob: () => () => Promise<unknown> | unknown;
   closeResources: CloseResource[];
 }
 
 export function createApplicationLifecycle(dependencies: ApplicationLifecycleDependencies) {
   let worker: PollWorker | undefined;
-  let stopCleanupJob: (() => void) | undefined;
+  let stopCleanupJob: (() => Promise<unknown> | unknown) | undefined;
   let startPromise: Promise<{ scheduledUserCount: number }> | undefined;
   let shutdownPromise: Promise<void> | undefined;
 
