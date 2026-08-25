@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { TwitchAuth } from "../services/twitch-auth";
 import { AuthSchemas } from "../schemas/auth";
 import { DbAuthToken } from "../db/queries/auth-token";
-import { scheduleUserPoll } from "../services/poll-worker";
+import { scheduleUserPoll } from "../services/polling";
 import { createLogger } from "../lib/logger";
 
 const log = createLogger({ component: "auth-callback" });

@@ -1,5 +1,5 @@
 import { DbAuthToken } from "../db/queries/auth-token";
-import { removeUserPoll } from "./poll-worker";
+import { removeUserPoll } from "./polling";
 import { createLogger } from "../lib/logger";
 
 const logger = createLogger({ component: "session-cleanup" });

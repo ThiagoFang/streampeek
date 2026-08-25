@@ -1,4 +1,4 @@
-import { createPollWorker, scheduleUserPoll, removeUserPoll } from "./services/poll-worker";
+import { createPollWorker, scheduleUserPoll, removeUserPoll } from "./services/polling";
 import { startCleanupJob } from "./services/session-cleanup";
 import { getConnectionManager } from "./services/connection-manager";
 import { TwitchAuth } from "./services/twitch-auth";
