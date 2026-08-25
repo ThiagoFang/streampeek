@@ -6,7 +6,7 @@ const USER_ID = "logout-test-user";
 const SESSION_ID = "logout-test-session";
 
 afterEach(async () => {
-  TwitchAuth.onLogout = null;
+  TwitchAuth.onSessionInvalidated = null;
   await DbAuthToken.deleteBySessionId(SESSION_ID);
 });
 
@@ -24,7 +24,7 @@ describe("logout", () => {
     });
 
     let cleanupContext: { userId: string; sessionId: string } | undefined;
-    TwitchAuth.onLogout = async (context) => {
+    TwitchAuth.onSessionInvalidated = async (context) => {
       await Bun.sleep(10);
       cleanupContext = context;
     };

@@ -17,8 +17,13 @@ export class PollProcessor {
   private previousLiveSets = new Map<string, LiveStreamerSet>();
   private initialPollDone = new Set<string>();
 
+  resetUser(userId: string) {
+    this.previousLiveSets.delete(userId);
+    this.initialPollDone.delete(userId);
+  }
+
   async processJob(job: { data: PollJobData }) {
-    const context = await this.loadPollingContext(job.data.sessionId);
+    const context = await this.loadPollingContext(job.data.userId);
     if (!context) return;
 
     const currentLiveSet = await this.loadCurrentLiveSet(context);
@@ -33,8 +38,8 @@ export class PollProcessor {
     this.previousLiveSets.set(context.userId, currentLiveSet);
   }
 
-  private async loadPollingContext(sessionId: string): Promise<PollingContext | null> {
-    const token = await DbAuthToken.getBySessionId(sessionId);
+  private async loadPollingContext(userId: string): Promise<PollingContext | null> {
+    const token = await DbAuthToken.getByUserId(userId);
     if (!token) return null;
 
     let accessToken = token.access_token;

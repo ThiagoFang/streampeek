@@ -1,13 +1,14 @@
 import Redis from "ioredis";
 import { envVariables } from "./env";
 import { createLogger } from "./logger";
-import { createBullMQConnection } from "./redis-connection";
+import { createBullMQQueueConnection, createBullMQWorkerConnection } from "./redis-connection";
 
 const logger = createLogger({ component: "redis" });
 
 export const redis = new Redis(envVariables.REDIS_URL);
 export const redisSub = new Redis(envVariables.REDIS_URL);
-export const bullMQConnection = createBullMQConnection(envVariables.REDIS_URL);
+export const bullMQQueueConnection = createBullMQQueueConnection(envVariables.REDIS_URL);
+export const bullMQWorkerConnection = createBullMQWorkerConnection(envVariables.REDIS_URL);
 
 redis.on("error", (err) => {
   logger.error({ err }, "Redis connection error");

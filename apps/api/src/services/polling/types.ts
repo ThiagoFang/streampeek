@@ -1,5 +1,5 @@
 export interface PollJobData {
-  sessionId: string;
+  userId: string;
 }
 
 export interface LiveStreamer {

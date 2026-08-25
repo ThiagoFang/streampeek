@@ -10,6 +10,7 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct StreamEvent {
     #[serde(rename = "type")]
     event_type: String,
@@ -240,7 +241,7 @@ async fn handle_event(
 
 #[cfg(test)]
 mod tests {
-    use super::parse_sse_event;
+    use super::{build_payload, parse_sse_event};
 
     #[test]
     fn reads_notification_preference_from_event() {
@@ -256,5 +257,19 @@ mod tests {
             parse_sse_event(r#"data: {"type":"stream.online"}"#).expect("event should be valid");
 
         assert!(event.should_notify);
+    }
+
+    #[test]
+    fn reads_the_complete_backend_event_payload() {
+        let event = parse_sse_event(
+            r#"data: {"type":"stream.online","broadcasterUserName":"Streamer Name","broadcasterUserLogin":"streamer_login","gameName":"Game","shouldNotify":true}"#,
+        )
+        .expect("event should be valid");
+        let payload = build_payload(&event);
+
+        assert_eq!(event.event_type, "stream.online");
+        assert_eq!(payload.display_name, "Streamer Name");
+        assert_eq!(payload.login, "streamer_login");
+        assert_eq!(payload.game_name.as_deref(), Some("Game"));
     }
 }

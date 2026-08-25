@@ -13,24 +13,31 @@ export async function handleEvents(c: Context) {
   if (!token) return c.json({ error: "UNAUTHORIZED" }, 401);
 
   const connectionManager = getConnectionManager();
-  await connectionManager.close(token.user_id);
 
   return streamSSE(c, async (stream) => {
-    const stopSubscription = await subscribe(`stream:${token.user_id}`, (message) => {
-      stream.writeSSE({ data: message });
+    const connection = await connectionManager.replace(token.user_id, async () => {
+      const currentToken = await DbAuthToken.getBySessionId(sessionId);
+      if (!currentToken || currentToken.user_id !== token.user_id) return undefined;
+
+      const stopSubscription = await subscribe(`stream:${token.user_id}`, (message) => {
+        stream.writeSSE({ data: message });
+      });
+
+      let unsubscribePromise: Promise<void> | undefined;
+
+      return {
+        abort: () => stream.abort(),
+        unsubscribe: () => (unsubscribePromise ??= stopSubscription()),
+      };
     });
 
-    let unsubscribePromise: Promise<void> | undefined;
-    const unsubscribe = () => (unsubscribePromise ??= stopSubscription());
-
-    const connection = {
-      abort: () => stream.abort(),
-      unsubscribe,
-    };
-    connectionManager.set(token.user_id, connection);
+    if (!connection) {
+      stream.abort();
+      return;
+    }
 
     stream.onAbort(() => {
-      void unsubscribe();
+      void connection.unsubscribe();
       connectionManager.delete(token.user_id, connection);
     });
 

@@ -10,13 +10,13 @@ const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
 
 const PENDING_STATE_TTL = 600;
 
-interface LogoutContext {
+export interface SessionInvalidationContext {
   userId: string;
   sessionId: string;
 }
 
 export const TwitchAuth = {
-  onLogout: null as ((context: LogoutContext) => Promise<void>) | null,
+  onSessionInvalidated: null as ((context: SessionInvalidationContext) => Promise<void>) | null,
 
   async generateState() {
     const state = crypto.randomUUID();
@@ -82,6 +82,7 @@ export const TwitchAuth = {
     tokenData: typeof AuthSchemas.tokenResponse.infer,
     userData: typeof AuthSchemas.twitchUser.infer,
   ) {
+    const previousToken = await DbAuthToken.getByUserId(userData.id);
     const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
 
@@ -96,7 +97,16 @@ export const TwitchAuth = {
       expires_at: expiresAt,
     });
 
+    if (previousToken && this.onSessionInvalidated) {
+      await this.onSessionInvalidated({
+        userId: previousToken.user_id,
+        sessionId: previousToken.session_id,
+      });
+    }
+
     await redis.set(`auth:pending:${state}`, sessionId, "EX", PENDING_STATE_TTL);
+
+    return sessionId;
   },
 
   async refreshToken(token: Selectable<AuthToken>) {
@@ -131,8 +141,8 @@ export const TwitchAuth = {
   async deleteToken(sessionId: string) {
     const token = await DbAuthToken.getBySessionId(sessionId);
     await DbAuthToken.deleteBySessionId(sessionId);
-    if (token && this.onLogout) {
-      await this.onLogout({ userId: token.user_id, sessionId: token.session_id });
+    if (token && this.onSessionInvalidated) {
+      await this.onSessionInvalidated({ userId: token.user_id, sessionId: token.session_id });
     }
   },
 };

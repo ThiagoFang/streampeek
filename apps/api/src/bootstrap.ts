@@ -1,5 +1,6 @@
-import { createPollWorker, scheduleUserPoll, removeUserPoll } from "./services/polling";
+import { closePolling, createPollWorker, synchronizeUserPolls } from "./services/polling";
 import { startCleanupJob } from "./services/session-cleanup";
+import { invalidateSessionResources } from "./services/session-lifecycle";
 import { getConnectionManager } from "./services/connection-manager";
 import { TwitchAuth } from "./services/twitch-auth";
 import { DbAuthToken } from "./db/queries/auth-token";
@@ -8,35 +9,38 @@ import { redis, redisSub } from "./lib/redis";
 import { log } from "./lib/logger";
 
 export async function initializeApp() {
+  TwitchAuth.onSessionInvalidated = invalidateSessionResources;
+
+  await synchronizeExistingPolls();
+
   const worker = createPollWorker();
-  const connectionManager = getConnectionManager();
-
-  setupGracefulShutdown(worker);
-
-  TwitchAuth.onLogout = async ({ userId, sessionId }) => {
-    await Promise.all([removeUserPoll(sessionId), connectionManager.close(userId)]);
-  };
-
-  await scheduleExistingPolls();
-
-  startCleanupJob();
+  const stopCleanupJob = startCleanupJob();
+  setupGracefulShutdown(worker, stopCleanupJob);
 
   log.info({}, "Application initialized");
 }
 
-async function scheduleExistingPolls() {
+async function synchronizeExistingPolls() {
   const tokens = await DbAuthToken.getAll();
-  for (const token of tokens) {
-    await scheduleUserPoll(token.session_id);
-  }
+  await synchronizeUserPolls(tokens.map((token) => token.user_id));
   log.info({ count: tokens.length }, "Scheduled poll jobs");
 }
 
-function setupGracefulShutdown(worker: ReturnType<typeof createPollWorker>) {
+function setupGracefulShutdown(
+  worker: ReturnType<typeof createPollWorker>,
+  stopCleanupJob: () => void,
+) {
+  let shuttingDown = false;
+
   const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     log.info({}, "Shutting down gracefully...");
 
+    stopCleanupJob();
     await worker.close();
+    await closePolling();
+    await getConnectionManager().closeAll();
     await db.destroy();
     await redis.quit();
     await redisSub.quit();
