@@ -1,16 +1,17 @@
 import { type } from "arktype";
 import { TwitchAuth } from "../services/twitch-auth";
+import { AuthHandshake } from "../services/auth-handshake-runtime";
 import { publicProcedure, protectedProcedure } from "./procedures";
 
 export const authRouter = {
   getAuthUrl: publicProcedure.handler(async () => {
-    const state = await TwitchAuth.generateState();
+    const state = await AuthHandshake.begin();
     const url = TwitchAuth.getAuthorizationUrl(state);
     return { url, state };
   }),
 
   getStatus: publicProcedure.input(type({ state: "string" })).handler(async ({ input }) => {
-    const sessionId = await TwitchAuth.claimSession(input.state);
+    const sessionId = await AuthHandshake.claimSession(input.state);
     if (!sessionId) return { authenticated: false as const };
     return { authenticated: true as const, session_id: sessionId };
   }),

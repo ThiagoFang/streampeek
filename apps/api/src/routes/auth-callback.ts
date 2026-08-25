@@ -3,6 +3,7 @@ import { TwitchAuth } from "../services/twitch-auth";
 import { AuthSchemas } from "../schemas/auth";
 import { scheduleUserPoll } from "../services/polling";
 import { createLogger } from "../lib/logger";
+import { AuthHandshake } from "../services/auth-handshake-runtime";
 
 const log = createLogger({ component: "auth-callback" });
 
@@ -11,15 +12,16 @@ export async function handleAuthCallback(c: Context) {
   const state = c.req.query("state");
   const validated = AuthSchemas.callbackQuery.assert({ code, state });
 
-  if (!(await TwitchAuth.validateState(validated.state))) {
+  if (!(await AuthHandshake.acceptCallback(validated.state))) {
     return c.html("<html><body><h1>Erro</h1><p>Estado inválido.</p></body></html>");
   }
 
   try {
     const tokenData = await TwitchAuth.exchangeCode(validated.code);
     const userData = await TwitchAuth.getUser(tokenData.access_token);
-    await TwitchAuth.saveToken(validated.state, tokenData, userData);
+    const sessionId = await TwitchAuth.saveToken(tokenData, userData);
     await scheduleUserPoll(userData.id);
+    await AuthHandshake.publishSession(validated.state, sessionId);
 
     return c.html(
       "<html><body><h1>Login concluído!</h1><p>Pode fechar esta aba.</p></body></html>",

@@ -1,17 +1,14 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { DbAuthToken } from "../db/queries/auth-token";
-import { redis } from "../lib/redis";
 import { TwitchAuth } from "../services/twitch-auth";
 
 const USER_ID = `replacement-user-${crypto.randomUUID()}`;
 const OLD_SESSION_ID = `old-session-${crypto.randomUUID()}`;
-const STATE = `replacement-state-${crypto.randomUUID()}`;
 
 afterEach(async () => {
   TwitchAuth.onSessionInvalidated = null;
   const token = await DbAuthToken.getByUserId(USER_ID);
   if (token) await DbAuthToken.deleteBySessionId(token.session_id);
-  await redis.del(`auth:pending:${STATE}`);
 });
 
 describe("session replacement", () => {
@@ -33,7 +30,6 @@ describe("session replacement", () => {
     };
 
     const newSessionId = await TwitchAuth.saveToken(
-      STATE,
       {
         access_token: "new-access",
         refresh_token: "new-refresh",

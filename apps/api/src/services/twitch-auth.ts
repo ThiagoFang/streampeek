@@ -2,13 +2,10 @@ import axios from "redaxios";
 import type { Selectable } from "kysely";
 import { AuthSchemas } from "../schemas/auth";
 import { envVariables } from "../lib/env";
-import { redis } from "../lib/redis";
 import { DbAuthToken } from "../db/queries/auth-token";
 import type { AuthToken } from "../db/generated/types";
 
 const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
-
-const PENDING_STATE_TTL = 600;
 
 export interface SessionInvalidationContext {
   userId: string;
@@ -17,24 +14,6 @@ export interface SessionInvalidationContext {
 
 export const TwitchAuth = {
   onSessionInvalidated: null as ((context: SessionInvalidationContext) => Promise<void>) | null,
-
-  async generateState() {
-    const state = crypto.randomUUID();
-    await redis.setex(`auth:pending:${state}`, PENDING_STATE_TTL, "");
-    return state;
-  },
-
-  async validateState(state: string) {
-    const exists = await redis.exists(`auth:pending:${state}`);
-    return exists === 1;
-  },
-
-  async claimSession(state: string) {
-    const sessionId = await redis.get(`auth:pending:${state}`);
-    if (!sessionId) return null;
-    await redis.del(`auth:pending:${state}`);
-    return sessionId;
-  },
 
   getAuthorizationUrl(state: string) {
     const params = new URLSearchParams({
@@ -78,7 +57,6 @@ export const TwitchAuth = {
   },
 
   async saveToken(
-    state: string,
     tokenData: typeof AuthSchemas.tokenResponse.infer,
     userData: typeof AuthSchemas.twitchUser.infer,
   ) {
@@ -103,8 +81,6 @@ export const TwitchAuth = {
         sessionId: previousToken.session_id,
       });
     }
-
-    await redis.set(`auth:pending:${state}`, sessionId, "EX", PENDING_STATE_TTL);
 
     return sessionId;
   },

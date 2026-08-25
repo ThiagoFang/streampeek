@@ -1,67 +1,92 @@
-import { describe, it, expect, afterAll } from "bun:test";
+import { afterAll, describe, expect, it } from "bun:test";
 import { redis } from "../lib/redis";
+import { createAuthHandshake } from "../services/auth-handshake";
+import { AuthHandshake } from "../services/auth-handshake-runtime";
 
-describe("auth state management", () => {
-  const testKeys: string[] = [];
+const createdStates: string[] = [];
 
-  async function generateTestState() {
-    const state = crypto.randomUUID();
-    const key = `auth:pending:${state}`;
-    testKeys.push(key);
-    await redis.setex(key, 600, "");
-    return state;
-  }
+async function beginTestHandshake() {
+  const state = await AuthHandshake.begin();
+  createdStates.push(state);
+  return state;
+}
 
-  afterAll(async () => {
-    if (testKeys.length) await redis.del(...testKeys);
+afterAll(async () => {
+  const keys = createdStates.flatMap((state) => [
+    `auth:authorization:${state}`,
+    `auth:session:${state}`,
+  ]);
+  if (keys.length) await redis.del(...keys);
+});
+
+describe("authentication handshake", () => {
+  it("creates a pending authorization with an expiration", async () => {
+    const state = await beginTestHandshake();
+
+    expect(await redis.get(`auth:authorization:${state}`)).toBe("pending");
+    expect(await redis.ttl(`auth:authorization:${state}`)).toBeGreaterThan(0);
   });
 
-  it("generates and validates state", async () => {
-    const state = await generateTestState();
+  it("accepts an authorization callback only once", async () => {
+    const state = await beginTestHandshake();
 
-    const exists = await redis.exists(`auth:pending:${state}`);
-    expect(exists).toBe(1);
+    const attempts = await Promise.all([
+      AuthHandshake.acceptCallback(state),
+      AuthHandshake.acceptCallback(state),
+    ]);
+
+    expect(attempts.filter(Boolean)).toHaveLength(1);
+    expect(attempts.filter((accepted) => !accepted)).toHaveLength(1);
   });
 
-  it("rejects invalid state", async () => {
-    const exists = await redis.exists("auth:pending:invalid-state");
-    expect(exists).toBe(0);
+  it("rejects an unknown authorization callback", async () => {
+    expect(await AuthHandshake.acceptCallback("unknown-state")).toBe(false);
   });
 
-  it("claims session and deletes state", async () => {
-    const state = await generateTestState();
+  it("delivers a completed session only once", async () => {
+    const state = await beginTestHandshake();
     const sessionId = crypto.randomUUID();
+    expect(await AuthHandshake.acceptCallback(state)).toBe(true);
+    await AuthHandshake.publishSession(state, sessionId);
 
-    await redis.set(`auth:pending:${state}`, sessionId, "EX", 600);
+    const claims = await Promise.all([
+      AuthHandshake.claimSession(state),
+      AuthHandshake.claimSession(state),
+    ]);
 
-    const claimed = await redis.get(`auth:pending:${state}`);
-    expect(claimed).toBe(sessionId);
-
-    await redis.del(`auth:pending:${state}`);
-
-    const afterClaim = await redis.get(`auth:pending:${state}`);
-    expect(afterClaim).toBeNull();
+    expect(claims.filter((claimed) => claimed === sessionId)).toHaveLength(1);
+    expect(claims.filter((claimed) => claimed === null)).toHaveLength(1);
   });
 
-  it("state expires after TTL", async () => {
-    const state = crypto.randomUUID();
-    const key = `auth:pending:${state}`;
-    testKeys.push(key);
+  it("keeps pending authorization and completed session in separate keys", async () => {
+    const state = await beginTestHandshake();
+    await AuthHandshake.publishSession(state, "session-1");
 
-    await redis.setex(key, 1, "");
-
-    await Bun.sleep(1100);
-
-    const exists = await redis.exists(key);
-    expect(exists).toBe(0);
+    expect(await redis.get(`auth:authorization:${state}`)).toBe("pending");
+    expect(await redis.get(`auth:session:${state}`)).toBe("session-1");
   });
 
-  it("session header parsing", () => {
-    const header = "Session abc-123-def";
-    expect(header.startsWith("Session ")).toBe(true);
-    expect(header.slice(8)).toBe("abc-123-def");
+  it("tries another state when a generated value is already reserved", async () => {
+    const reservedStates = new Set(["duplicate-state"]);
+    const generatedStates = ["duplicate-state", "unique-state"];
+    const handshake = createAuthHandshake(
+      {
+        async reserveAuthorization(state) {
+          if (reservedStates.has(state)) return false;
+          reservedStates.add(state);
+          return true;
+        },
+        async consumeAuthorization() {
+          return false;
+        },
+        async publishSession() {},
+        async claimSession() {
+          return null;
+        },
+      },
+      { generateState: () => generatedStates.shift() ?? "unexpected-state" },
+    );
 
-    const invalid = "Bearer abc-123";
-    expect(invalid.startsWith("Session ")).toBe(false);
+    expect(await handshake.begin()).toBe("unique-state");
   });
 });
