@@ -4,14 +4,17 @@ import type { SessionInvalidationContext } from "./twitch-auth";
 
 interface SessionResources {
   removePoll: (userId: string) => Promise<unknown>;
-  resetPollingState: (userId: string) => void;
+  resetPollingState: (userId: string) => Promise<unknown>;
   closeConnection: (userId: string) => Promise<unknown>;
 }
 
 export function createSessionInvalidationHandler(resources: SessionResources) {
   return async ({ userId }: SessionInvalidationContext) => {
-    resources.resetPollingState(userId);
-    await Promise.all([resources.removePoll(userId), resources.closeConnection(userId)]);
+    await Promise.all([
+      resources.resetPollingState(userId),
+      resources.removePoll(userId),
+      resources.closeConnection(userId),
+    ]);
   };
 }
 

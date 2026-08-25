@@ -9,7 +9,8 @@ describe("session invalidation", () => {
         await Bun.sleep(5);
         calls.push(`poll:${userId}`);
       },
-      resetPollingState: (userId) => {
+      resetPollingState: async (userId) => {
+        await Bun.sleep(5);
         calls.push(`state:${userId}`);
       },
       closeConnection: async (userId) => {

@@ -1,8 +1,3 @@
-import { DbNotificationExclusion } from "../../db/queries/notification-exclusion";
-import { DbUserSettings } from "../../db/queries/user-settings";
-import { redis } from "../../lib/redis";
-import { SessionResolver } from "../session-resolver-runtime";
-import { TwitchStreamer } from "../streamer";
 import { detectStreamTransitions } from "./stream-detector";
 import { shouldNotify } from "./notification-policy";
 import type { LiveStreamerSet, PollJobData, StreamEvent, StreamEventDelivery } from "./types";
@@ -12,22 +7,51 @@ interface PollingContext {
   accessToken: string;
 }
 
+interface FollowedChannel {
+  broadcaster_id: string;
+  broadcaster_login: string;
+  broadcaster_name: string;
+}
+
+interface StreamSnapshot {
+  game_name?: string;
+}
+
+export interface PollProcessorDependencies {
+  resolveSession: (userId: string) => Promise<PollingContext | null>;
+  getFollowedChannels: (userId: string, accessToken: string) => Promise<FollowedChannel[]>;
+  getStreams: (
+    broadcasterIds: string[],
+    accessToken: string,
+  ) => Promise<Record<string, StreamSnapshot>>;
+  getNotificationsEnabled: (userId: string) => Promise<boolean>;
+  isStreamerExcluded: (userId: string, broadcasterId: string) => Promise<boolean>;
+  publishEvent: (userId: string, event: StreamEventDelivery) => Promise<void>;
+}
+
 export class PollProcessor {
   private previousLiveSets = new Map<string, LiveStreamerSet>();
   private initialPollDone = new Set<string>();
+  private userLocks = new Map<string, Promise<void>>();
+
+  constructor(private readonly dependencies: PollProcessorDependencies) {}
 
   resetUser(userId: string) {
-    this.previousLiveSets.delete(userId);
-    this.initialPollDone.delete(userId);
+    return this.withUserLock(userId, () => {
+      this.previousLiveSets.delete(userId);
+      this.initialPollDone.delete(userId);
+    });
   }
 
-  async processJob(job: { data: PollJobData }) {
-    const context = await this.loadPollingContext(job.data.userId);
+  processJob(job: { data: PollJobData }) {
+    return this.withUserLock(job.data.userId, () => this.processUser(job.data.userId));
+  }
+
+  private async processUser(userId: string) {
+    const context = await this.dependencies.resolveSession(userId);
     if (!context) return;
 
     const currentLiveSet = await this.loadCurrentLiveSet(context);
-    if (!currentLiveSet) return;
-
     if (this.recordInitialBaseline(context.userId, currentLiveSet)) return;
 
     const previousLiveSet = this.previousLiveSets.get(context.userId) ?? new Map();
@@ -37,20 +61,15 @@ export class PollProcessor {
     this.previousLiveSets.set(context.userId, currentLiveSet);
   }
 
-  private async loadPollingContext(userId: string): Promise<PollingContext | null> {
-    const token = await SessionResolver.byUserId(userId);
-    if (!token) return null;
-
-    return { userId: token.user_id, accessToken: token.access_token };
-  }
-
-  private async loadCurrentLiveSet(context: PollingContext): Promise<LiveStreamerSet | null> {
-    const channels = await TwitchStreamer.getFollowedChannels(context.userId, context.accessToken);
-    if (!channels.length) return null;
+  private async loadCurrentLiveSet(context: PollingContext): Promise<LiveStreamerSet> {
+    const channels = await this.dependencies.getFollowedChannels(
+      context.userId,
+      context.accessToken,
+    );
+    if (!channels.length) return new Map();
 
     const broadcasterIds = channels.map((channel) => channel.broadcaster_id);
-    const streams = await TwitchStreamer.getStreams(broadcasterIds, context.accessToken);
-    if (!streams) return null;
+    const streams = await this.dependencies.getStreams(broadcasterIds, context.accessToken);
 
     const currentLiveSet: LiveStreamerSet = new Map();
     for (const channel of channels) {
@@ -78,23 +97,40 @@ export class PollProcessor {
   private async publishEvents(userId: string, events: StreamEvent[]) {
     if (!events.length) return;
 
-    const settings = await DbUserSettings.getByUserId(userId);
+    const notificationsEnabled = await this.dependencies.getNotificationsEnabled(userId);
 
     for (const event of events) {
       const streamerExcluded =
-        event.type === "stream.online" && settings.notifications_enabled
-          ? await DbNotificationExclusion.isExcluded(userId, event.broadcasterUserId)
+        event.type === "stream.online" && notificationsEnabled
+          ? await this.dependencies.isStreamerExcluded(userId, event.broadcasterUserId)
           : false;
 
       const delivery: StreamEventDelivery = {
         ...event,
-        shouldNotify: shouldNotify(event, {
-          notificationsEnabled: settings.notifications_enabled,
-          streamerExcluded,
-        }),
+        shouldNotify: shouldNotify(event, { notificationsEnabled, streamerExcluded }),
       };
 
-      await redis.publish(`stream:${userId}`, JSON.stringify(delivery));
+      await this.dependencies.publishEvent(userId, delivery);
+    }
+  }
+
+  private async withUserLock<T>(userId: string, operation: () => Promise<T> | T): Promise<T> {
+    const previous = this.userLocks.get(userId) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    this.userLocks.set(userId, current);
+    await previous;
+
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.userLocks.get(userId) === current) {
+        this.userLocks.delete(userId);
+      }
     }
   }
 }
