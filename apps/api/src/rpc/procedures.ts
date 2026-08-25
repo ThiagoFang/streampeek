@@ -1,6 +1,5 @@
 import { os } from "@orpc/server";
-import { DbAuthToken } from "../db/queries/auth-token";
-import { TwitchAuth } from "../services/twitch-auth";
+import { SessionResolver } from "../services/session-resolver-runtime";
 
 type Context = { reqHeaders: Headers };
 
@@ -13,14 +12,8 @@ const authMiddleware = base.middleware(async ({ context, next, errors }) => {
   if (!header?.startsWith("Session ")) throw errors.UNAUTHORIZED();
 
   const sessionId = header.slice(8);
-  const token = await DbAuthToken.getBySessionId(sessionId);
+  const token = await SessionResolver.bySessionId(sessionId);
   if (!token) throw errors.UNAUTHORIZED();
-
-  if (new Date(token.expires_at) <= new Date()) {
-    const refreshed = await TwitchAuth.refreshToken(token).catch(() => null);
-    if (!refreshed) throw errors.UNAUTHORIZED();
-    return next({ context: { token: refreshed } });
-  }
 
   return next({ context: { token } });
 });

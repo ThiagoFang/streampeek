@@ -1,8 +1,7 @@
-import { DbAuthToken } from "../../db/queries/auth-token";
 import { DbNotificationExclusion } from "../../db/queries/notification-exclusion";
 import { DbUserSettings } from "../../db/queries/user-settings";
 import { redis } from "../../lib/redis";
-import { TwitchAuth } from "../twitch-auth";
+import { SessionResolver } from "../session-resolver-runtime";
 import { TwitchStreamer } from "../streamer";
 import { detectStreamTransitions } from "./stream-detector";
 import { shouldNotify } from "./notification-policy";
@@ -39,17 +38,10 @@ export class PollProcessor {
   }
 
   private async loadPollingContext(userId: string): Promise<PollingContext | null> {
-    const token = await DbAuthToken.getByUserId(userId);
+    const token = await SessionResolver.byUserId(userId);
     if (!token) return null;
 
-    let accessToken = token.access_token;
-    if (new Date(token.expires_at) <= new Date()) {
-      const refreshed = await TwitchAuth.refreshToken(token).catch(() => null);
-      if (!refreshed) return null;
-      accessToken = refreshed.access_token;
-    }
-
-    return { userId: token.user_id, accessToken };
+    return { userId: token.user_id, accessToken: token.access_token };
   }
 
   private async loadCurrentLiveSet(context: PollingContext): Promise<LiveStreamerSet | null> {
