@@ -35,15 +35,30 @@ function HomeStreamerOnline(props: HomeStreamerProps) {
             {streamer.gameName}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
-          <Eye aria-hidden="true" className="size-3" />
-          <span className="text-[10px] font-medium tabular-nums">
-            {formatViewerCount(streamer.viewerCount)}
-          </span>
-        </div>
       </button>
-      <NotificationToggle {...props} />
+      <OnlineTrailingAction {...props} />
     </li>
+  );
+}
+
+function OnlineTrailingAction(props: HomeStreamerProps) {
+  const { streamer, isMuted } = props;
+
+  return (
+    <div className="relative mr-1 h-7 w-12 shrink-0">
+      <div
+        className={cn(
+          "absolute inset-0 flex items-center justify-end gap-1 pr-1 text-muted-foreground transition-opacity",
+          isMuted ? "opacity-0" : "opacity-100 group-hover:opacity-0 group-focus-within:opacity-0",
+        )}
+      >
+        <Eye aria-hidden="true" className="size-3" />
+        <span className="text-[10px] font-medium tabular-nums">
+          {formatViewerCount(streamer.viewerCount)}
+        </span>
+      </div>
+      <NotificationToggle {...props} className="absolute top-0 right-0" />
+    </div>
   );
 }
 
@@ -86,9 +101,13 @@ function HomeStreamerOffline(props: HomeStreamerProps) {
           </span>
         </div>
       </button>
-      <NotificationToggle {...props} />
+      <NotificationToggle {...props} className="mr-1" />
     </li>
   );
+}
+
+interface NotificationToggleProps extends HomeStreamerProps {
+  className?: string;
 }
 
 function NotificationToggle({
@@ -96,7 +115,8 @@ function NotificationToggle({
   isMuted,
   isUpdatingMutedState,
   onToggleMuted,
-}: HomeStreamerProps) {
+  className,
+}: NotificationToggleProps) {
   const Icon = isMuted ? BellOff : Bell;
   const action = isMuted ? "Reativar" : "Silenciar";
 
@@ -106,10 +126,11 @@ function NotificationToggle({
       aria-label={`${action} notificações de ${streamer.displayName}`}
       title={`${action} notificações`}
       className={cn(
-        "mr-1 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-50",
+        "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-50",
         isMuted && "bg-accent/70",
         !isMuted &&
-          "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100",
+          "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100",
+        className,
       )}
       disabled={isUpdatingMutedState}
       onClick={() => void onToggleMuted(streamer).catch(() => undefined)}
