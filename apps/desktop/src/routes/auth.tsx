@@ -14,10 +14,7 @@ function AuthContent() {
   return (
     <>
       <div className="relative">
-        <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-7 rounded-full bg-primary"
-          style={{ animation: "logo-breathe 6s ease-in-out infinite" }}
-        />
+        <div className="absolute left-1/2 top-1/2 size-7 -translate-x-1/2 -translate-y-1/2 animate-[logo-breathe_6s_ease-in-out_infinite] rounded-full bg-primary" />
         <img src="/logo_streampeek.png" alt="Logo StreamPeek" className="w-[30px] h-[46px]" />
       </div>
 

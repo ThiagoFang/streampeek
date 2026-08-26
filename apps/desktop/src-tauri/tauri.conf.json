@@ -28,7 +28,21 @@
       "menuOnLeftClick": false
     },
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost https://streampeek-production.up.railway.app",
+        "font-src": "'self'",
+        "img-src": "'self' https://static-cdn.jtvnw.net data: blob:",
+        "style-src": "'self'"
+      },
+      "devCsp": {
+        "default-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost http: https: ws: wss:",
+        "font-src": "'self'",
+        "img-src": "'self' https://static-cdn.jtvnw.net data: blob:",
+        "script-src": "'self' 'unsafe-eval'",
+        "style-src": "'self' 'unsafe-inline'"
+      }
     }
   },
   "bundle": {
