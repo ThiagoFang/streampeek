@@ -5,10 +5,11 @@ import { useLogout } from "@/hooks/use-logout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { Autostart } from "@/lib/autostart";
 import { getErrorMessage } from "@/lib/error-message";
+import { usePathStore } from "@/store/path";
 import { Toast } from "@/store/toast";
 import { Switch } from "@/components/ui/switch";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Bell, Computer, LogOut, X } from "lucide-react";
+import { ArrowLeft, Bell, Computer, LogOut, X } from "lucide-react";
 
 export function Settings() {
   return (
@@ -29,9 +30,22 @@ export function Settings() {
 }
 
 function SettingsToggles() {
+  const navigate = usePathStore((state) => state.setPath);
+
   return (
     <div className="flex flex-col gap-2">
-      <SettingsSectionHeader title="Geral" />
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          aria-label="Voltar para a tela principal"
+          title="Voltar"
+          className="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={() => navigate("home")}
+        >
+          <ArrowLeft aria-hidden="true" className="size-3.5" />
+        </button>
+        <SettingsSectionHeader title="Geral" />
+      </div>
       <div className="rounded-xl border border-border/70 bg-secondary/35 p-1">
         <NotificationsToggle />
         <div className="mx-2 h-px bg-border/60" />
