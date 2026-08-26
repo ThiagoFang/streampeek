@@ -1,14 +1,15 @@
 import { AuthErrorBoundary, AuthProvider } from "@/lib/auth";
 import { useStreamEvents } from "@/hooks/use-stream-events";
+import { useSessionStore } from "@/store/session";
 import { navigationClient } from "./navigation";
 import { usePathStore } from "./store/path";
 import { Auth } from "./routes/auth";
 import { Suspense } from "react";
 
 export default function App() {
-  const path = usePathStore((state) => state.path);
+  const sessionId = useSessionStore((state) => state.sessionId);
 
-  if (path === "auth") return <Auth />;
+  if (!sessionId) return <Auth />;
 
   return (
     <Suspense fallback={<AppSkeleton />}>

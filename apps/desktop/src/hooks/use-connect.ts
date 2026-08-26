@@ -34,12 +34,10 @@ function useConnect() {
     if (!data?.authenticated) return;
 
     setSessionId(data.session_id);
+    navigate("home");
     setAuthState(null);
 
-    (async () => {
-      await queryClient.prefetchQuery(orpc.auth.getMe.queryOptions());
-      navigate("home");
-    })();
+    void queryClient.prefetchQuery(orpc.auth.getMe.queryOptions());
   }, [data?.authenticated]);
 
   return { connect, isPolling: !!authState };

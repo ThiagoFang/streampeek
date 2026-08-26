@@ -1,4 +1,4 @@
-import { Route } from "@/navigation";
+import type { Route } from "@/navigation";
 import { create } from "zustand";
 
 type PathStore = {
@@ -6,18 +6,7 @@ type PathStore = {
   setPath: (path: Route) => void;
 };
 
-function getInitialPath(): Route {
-  try {
-    const stored = localStorage.getItem("session-store");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed?.state?.sessionId) return "home";
-    }
-  } catch {}
-  return "auth";
-}
-
 export const usePathStore = create<PathStore>((set) => ({
-  path: getInitialPath(),
+  path: "home",
   setPath: (path) => set({ path }),
 }));
