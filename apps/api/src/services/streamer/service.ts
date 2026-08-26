@@ -24,6 +24,7 @@ export function createStreamerService(dependencies: StreamerServiceDependencies)
 
         return {
           id: channel.broadcaster_id,
+          channelSlug: channel.broadcaster_login,
           displayName: channel.broadcaster_name,
           profileImageUrl: user?.profile_image_url ?? "",
           isLive: Boolean(stream),

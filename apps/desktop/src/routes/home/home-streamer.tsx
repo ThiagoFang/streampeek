@@ -9,7 +9,7 @@ interface HomeStreamerProps {
 }
 
 function HomeStreamerOnline({ streamer }: HomeStreamerProps) {
-  const handleClick = () => openTwitchChannel(streamer.displayName.toLowerCase());
+  const handleClick = () => openTwitchChannel(streamer.channelSlug);
 
   return (
     <li
@@ -56,7 +56,7 @@ function HomeStreamerOnlineAvatar({ streamer }: HomeStreamerProps) {
 }
 
 function HomeStreamerOffline({ streamer }: HomeStreamerProps) {
-  const handleClick = () => openTwitchChannel(streamer.displayName.toLowerCase());
+  const handleClick = () => openTwitchChannel(streamer.channelSlug);
 
   return (
     <li

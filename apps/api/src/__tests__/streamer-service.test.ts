@@ -50,6 +50,7 @@ describe("streamer service", () => {
     expect(streamers).toEqual([
       {
         id: "live-id",
+        channelSlug: "live-streamer",
         displayName: "Live Streamer",
         profileImageUrl: "https://example.com/avatar.jpg",
         isLive: true,
@@ -60,6 +61,7 @@ describe("streamer service", () => {
       },
       {
         id: "offline-id",
+        channelSlug: "offline-streamer",
         displayName: "Offline Streamer",
         profileImageUrl: "",
         isLive: false,
