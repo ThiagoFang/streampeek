@@ -1,8 +1,10 @@
 import { Layout } from "@/components/authenticated-layout";
 import { StatusDot } from "@/components/ui/status-dot";
+import { useOfflineSection } from "@/hooks/use-offline-section";
 import { useSortedStreamers } from "@/hooks/use-sorted-streamers";
 import { useStreamerNotifications } from "@/hooks/use-streamer-notifications";
 import { Streamer } from "@/types/streamer";
+import { ChevronDown } from "lucide-react";
 import { Suspense } from "react";
 import { StreamerListEmpty } from "./home-empty";
 import { StreamerListSkeleton } from "./home-skeleton";
@@ -40,7 +42,6 @@ function StreamerList() {
         isUpdatingMutedState={notifications.isUpdating}
         onToggleMuted={notifications.toggleMuted}
       />
-      <OfflineFooter offline={offline} />
     </div>
   );
 }
@@ -94,39 +95,45 @@ function OfflineSection({
   isUpdatingMutedState,
   onToggleMuted,
 }: OfflineSectionProps) {
+  const section = useOfflineSection();
+
   if (offline.length === 0) return null;
 
   return (
-    <section className="flex flex-col pt-2">
-      <div className="px-2 py-1">
-        <span className="text-[10px] font-medium tracking-[0.5px] text-muted-foreground">
-          OFFLINE
+    <section className="flex flex-col pt-1">
+      <button
+        type="button"
+        aria-controls="offline-streamers"
+        aria-expanded={section.isExpanded}
+        className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        onClick={section.toggle}
+      >
+        <span className="flex items-center gap-1">
+          <StatusDot variant="offline" />
+          <span className="text-[10px] font-medium tracking-[0.5px]">OFFLINE</span>
         </span>
-      </div>
-      <ul className="flex flex-col px-0.5 py-1">
-        {offline.map((streamer) => (
-          <HomeStreamerOffline
-            key={streamer.id}
-            streamer={streamer}
-            isMuted={isMuted(streamer.id)}
-            isUpdatingMutedState={isUpdatingMutedState(streamer.id)}
-            onToggleMuted={onToggleMuted}
+        <span className="flex items-center gap-1">
+          <span className="text-[10px] font-medium tracking-[0.5px]">{offline.length}</span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`size-3 transition-transform ${section.isExpanded ? "rotate-180" : ""}`}
           />
-        ))}
-      </ul>
+        </span>
+      </button>
+
+      {section.isExpanded && (
+        <ul id="offline-streamers" className="flex flex-col px-0.5 py-1">
+          {offline.map((streamer) => (
+            <HomeStreamerOffline
+              key={streamer.id}
+              streamer={streamer}
+              isMuted={isMuted(streamer.id)}
+              isUpdatingMutedState={isUpdatingMutedState(streamer.id)}
+              onToggleMuted={onToggleMuted}
+            />
+          ))}
+        </ul>
+      )}
     </section>
-  );
-}
-
-function OfflineFooter({ offline }: { offline: Streamer[] }) {
-  if (offline.length === 0) return null;
-
-  return (
-    <footer className="sticky bottom-0 z-50 mt-auto flex items-center gap-1.5 border-t border-border bg-background px-3 py-2">
-      <StatusDot variant="offline" />
-      <span className="text-[10px] font-medium tracking-[0.5px] text-muted-foreground">
-        {offline.length} OFFLINE
-      </span>
-    </footer>
   );
 }
