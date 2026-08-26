@@ -3,7 +3,7 @@ import { AuthSchemas } from "../schemas/auth";
 
 const TWITCH_AUTH_URL = "https://id.twitch.tv/oauth2";
 const TWITCH_USERS_URL = "https://api.twitch.tv/helix/users";
-const TWITCH_SCOPES = ["user:read:email", "user:read:follows"];
+const TWITCH_SCOPES = ["user:read:follows"];
 const twitchUsersResponse = type({ data: AuthSchemas.twitchUser.array() });
 
 interface TwitchAuthRequest {

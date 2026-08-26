@@ -41,7 +41,7 @@ describe("Twitch authentication client", () => {
       client_id: "client-id",
       redirect_uri: "https://api.example.com/auth/callback",
       response_type: "code",
-      scope: "user:read:email user:read:follows",
+      scope: "user:read:follows",
       state: "state-1",
     });
   });
