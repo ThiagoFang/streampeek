@@ -3,12 +3,11 @@ import { Layout } from "@/components/authenticated-layout";
 import { useExclusionList, useRemoveExclusion } from "@/hooks/use-exclusion-list";
 import { useLogout } from "@/hooks/use-logout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
-import { toggleAutostart } from "@/lib/tauri";
+import { Autostart } from "@/lib/autostart";
 import { getErrorMessage } from "@/lib/error-message";
 import { Toast } from "@/store/toast";
 import { Switch } from "@/components/ui/switch";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { isEnabled } from "@tauri-apps/plugin-autostart";
 import { Bell, Computer, LogOut, X } from "lucide-react";
 
 export function Settings() {
@@ -72,7 +71,7 @@ function AutostartToggle() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    void isEnabled()
+    void Autostart.isEnabled()
       .then(setEnabled)
       .catch((error) => {
         Toast.error(getErrorMessage(error, "Não foi possível consultar o início automático"));
@@ -82,7 +81,7 @@ function AutostartToggle() {
   const handleChange = async (checked: boolean) => {
     setIsUpdating(true);
     try {
-      await toggleAutostart(checked);
+      await Autostart.setEnabled(checked);
       setEnabled(checked);
     } catch (error) {
       Toast.error(getErrorMessage(error, "Não foi possível alterar o início automático"));
