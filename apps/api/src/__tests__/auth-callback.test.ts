@@ -47,6 +47,7 @@ function createHarness(overrides: Partial<AuthCallbackDependencies> = {}) {
     },
     publishSession: async () => {
       calls.push("publish session");
+      return true;
     },
     ...overrides,
   };
@@ -123,6 +124,26 @@ describe("authentication callback", () => {
       "get user",
       "create session",
       "schedule polling",
+      "delete session",
+    ]);
+  });
+
+  it("deletes a created session when the user canceled during the callback", async () => {
+    const harness = createHarness({
+      publishSession: async () => {
+        harness.calls.push("publish session");
+        return false;
+      },
+    });
+
+    expect(await harness.service.complete("code", "state")).toEqual({ completed: false });
+    expect(harness.calls).toEqual([
+      "accept authorization",
+      "exchange code",
+      "get user",
+      "create session",
+      "schedule polling",
+      "publish session",
       "delete session",
     ]);
   });

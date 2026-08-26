@@ -17,6 +17,12 @@ export const authRouter = {
     return { authenticated: true as const, session_id: sessionId };
   }),
 
+  cancelLogin: publicProcedure.input(type({ state: "string > 0" })).handler(async ({ input }) => {
+    const sessionId = await AuthHandshake.cancel(input.state);
+    if (sessionId) await AuthSession.delete(sessionId);
+    return { canceled: true as const };
+  }),
+
   getMe: protectedProcedure.handler(({ context }) => ({
     user_id: context.token.user_id,
     user_login: context.token.user_login,

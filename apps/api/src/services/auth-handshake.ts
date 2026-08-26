@@ -4,8 +4,9 @@ const MAX_STATE_GENERATION_ATTEMPTS = 3;
 export interface AuthHandshakeStore {
   reserveAuthorization: (state: string, ttlSeconds: number) => Promise<boolean>;
   consumeAuthorization: (state: string) => Promise<boolean>;
-  publishSession: (state: string, sessionId: string, ttlSeconds: number) => Promise<void>;
+  publishSession: (state: string, sessionId: string, ttlSeconds: number) => Promise<boolean>;
   claimSession: (state: string) => Promise<string | null>;
+  cancelAuthorization: (state: string, ttlSeconds: number) => Promise<string | null>;
 }
 
 interface AuthHandshakeOptions {
@@ -40,6 +41,10 @@ export function createAuthHandshake(
 
     claimSession(state: string) {
       return store.claimSession(state);
+    },
+
+    cancel(state: string) {
+      return store.cancelAuthorization(state, ttlSeconds);
     },
   };
 }

@@ -15,6 +15,8 @@ afterAll(async () => {
   const keys = createdStates.flatMap((state) => [
     `auth:authorization:${state}`,
     `auth:session:${state}`,
+    `auth:session-receipt:${state}`,
+    `auth:canceled:${state}`,
   ]);
   if (keys.length) await redis.del(...keys);
 });
@@ -47,7 +49,7 @@ describe("authentication handshake", () => {
     const state = await beginTestHandshake();
     const sessionId = crypto.randomUUID();
     expect(await AuthHandshake.acceptCallback(state)).toBe(true);
-    await AuthHandshake.publishSession(state, sessionId);
+    expect(await AuthHandshake.publishSession(state, sessionId)).toBe(true);
 
     const claims = await Promise.all([
       AuthHandshake.claimSession(state),
@@ -66,6 +68,44 @@ describe("authentication handshake", () => {
     expect(await redis.get(`auth:session:${state}`)).toBe("session-1");
   });
 
+  it("invalidates a pending authorization when canceled", async () => {
+    const state = await beginTestHandshake();
+
+    expect(await AuthHandshake.cancel(state)).toBeNull();
+
+    expect(await AuthHandshake.acceptCallback(state)).toBe(false);
+    expect(await redis.get(`auth:authorization:${state}`)).toBeNull();
+  });
+
+  it("rejects a session published after cancellation", async () => {
+    const state = await beginTestHandshake();
+    expect(await AuthHandshake.acceptCallback(state)).toBe(true);
+
+    expect(await AuthHandshake.cancel(state)).toBeNull();
+    expect(await AuthHandshake.publishSession(state, "late-session")).toBe(false);
+    expect(await AuthHandshake.claimSession(state)).toBeNull();
+  });
+
+  it("returns a published session so cancellation can clean it up", async () => {
+    const state = await beginTestHandshake();
+    const sessionId = crypto.randomUUID();
+    expect(await AuthHandshake.acceptCallback(state)).toBe(true);
+    expect(await AuthHandshake.publishSession(state, sessionId)).toBe(true);
+
+    expect(await AuthHandshake.cancel(state)).toBe(sessionId);
+    expect(await AuthHandshake.claimSession(state)).toBeNull();
+  });
+
+  it("remembers a published session long enough to cancel after it was claimed", async () => {
+    const state = await beginTestHandshake();
+    const sessionId = crypto.randomUUID();
+    expect(await AuthHandshake.acceptCallback(state)).toBe(true);
+    expect(await AuthHandshake.publishSession(state, sessionId)).toBe(true);
+    expect(await AuthHandshake.claimSession(state)).toBe(sessionId);
+
+    expect(await AuthHandshake.cancel(state)).toBe(sessionId);
+  });
+
   it("tries another state when a generated value is already reserved", async () => {
     const reservedStates = new Set(["duplicate-state"]);
     const generatedStates = ["duplicate-state", "unique-state"];
@@ -79,8 +119,13 @@ describe("authentication handshake", () => {
         async consumeAuthorization() {
           return false;
         },
-        async publishSession() {},
+        async publishSession() {
+          return true;
+        },
         async claimSession() {
+          return null;
+        },
+        async cancelAuthorization() {
           return null;
         },
       },

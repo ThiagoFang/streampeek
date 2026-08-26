@@ -10,7 +10,7 @@ export interface AuthCallbackDependencies {
   createSession: (token: TokenData, user: TwitchUser) => Promise<string>;
   deleteSession: (sessionId: string) => Promise<unknown>;
   schedulePolling: (userId: string) => Promise<unknown>;
-  publishSession: (state: string, sessionId: string) => Promise<unknown>;
+  publishSession: (state: string, sessionId: string) => Promise<boolean>;
 }
 
 export function createAuthCallbackService(dependencies: AuthCallbackDependencies) {
@@ -28,7 +28,13 @@ export function createAuthCallbackService(dependencies: AuthCallbackDependencies
         sessionId = await dependencies.createSession(token, user);
 
         await dependencies.schedulePolling(user.id);
-        await dependencies.publishSession(state, sessionId);
+        const published = await dependencies.publishSession(state, sessionId);
+        if (!published) {
+          const canceledSessionId = sessionId;
+          sessionId = undefined;
+          await dependencies.deleteSession(canceledSessionId);
+          return { completed: false as const };
+        }
 
         return { completed: true as const };
       } catch (error) {

@@ -5,7 +5,7 @@ export function Auth() {
   return (
     <section className="w-full gap-9 h-full p-4 flex flex-col items-center justify-center">
       <AuthContent />
-      <AuthButton />
+      <AuthActions />
     </section>
   );
 }
@@ -32,22 +32,34 @@ function AuthContent() {
   );
 }
 
-function AuthButton() {
-  const { connect, isConnecting } = useConnect();
+function AuthActions() {
+  const { connect, cancel, isConnecting, canCancel } = useConnect();
 
   return (
-    <Button
-      className="w-full cursor-pointer rounded-lg py-1 px-6"
-      disabled={isConnecting}
-      onClick={() => connect(undefined)}
-    >
-      {isConnecting ? (
-        "Conectando..."
-      ) : (
-        <span className="text-[12px] font-medium text-foreground">
-          Entrar com <span className="font-semibold">Twitch.tv</span>
-        </span>
+    <div className="relative w-full">
+      <Button
+        className="w-full cursor-pointer rounded-lg py-1 px-6"
+        disabled={isConnecting}
+        onClick={() => connect(undefined)}
+      >
+        {isConnecting ? (
+          "Conectando..."
+        ) : (
+          <span className="text-[12px] font-medium text-foreground">
+            Entrar com <span className="font-semibold">Twitch.tv</span>
+          </span>
+        )}
+      </Button>
+
+      {canCancel && (
+        <button
+          type="button"
+          className="absolute top-full left-1/2 mt-2 -translate-x-1/2 cursor-pointer text-[10px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={cancel}
+        >
+          Cancelar
+        </button>
       )}
-    </Button>
+    </div>
   );
 }
