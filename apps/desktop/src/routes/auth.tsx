@@ -36,15 +36,15 @@ function AuthContent() {
 }
 
 function AuthButton() {
-  const { connect, isPolling } = useConnect();
+  const { connect, isConnecting } = useConnect();
 
   return (
     <Button
       className="w-full cursor-pointer rounded-lg py-1 px-6"
-      disabled={isPolling}
+      disabled={isConnecting}
       onClick={() => connect(undefined)}
     >
-      {isPolling ? (
+      {isConnecting ? (
         "Conectando..."
       ) : (
         <span className="text-[12px] font-medium text-foreground">
