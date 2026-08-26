@@ -34,7 +34,7 @@ struct StreamerPayload {
 
 pub struct SseClient {
     online_streamers: Arc<Mutex<HashSet<String>>>,
-    running: Arc<AtomicBool>,
+    running: Option<Arc<AtomicBool>>,
     task: Option<JoinHandle<()>>,
 }
 
@@ -42,19 +42,26 @@ impl SseClient {
     pub fn new(online_streamers: Arc<Mutex<HashSet<String>>>) -> Self {
         Self {
             online_streamers,
-            running: Arc::new(AtomicBool::new(false)),
+            running: None,
             task: None,
         }
     }
 
-    pub fn start(&mut self, app_handle: AppHandle, session_id: String, api_base_url: String) {
-        if self.running.load(Ordering::SeqCst) {
-            return;
-        }
+    pub async fn replace(
+        &mut self,
+        app_handle: AppHandle,
+        session_id: String,
+        api_base_url: String,
+    ) {
+        self.stop().await;
+        crate::update_tray_icon(&app_handle, false);
+        self.start(app_handle, session_id, api_base_url);
+    }
 
-        self.running.store(true, Ordering::SeqCst);
+    fn start(&mut self, app_handle: AppHandle, session_id: String, api_base_url: String) {
         let online_streamers = self.online_streamers.clone();
-        let running = self.running.clone();
+        let running = Arc::new(AtomicBool::new(true));
+        self.running = Some(running.clone());
 
         let task = tokio::spawn(async move {
             let mut delay = Duration::from_secs(1);
@@ -95,12 +102,19 @@ impl SseClient {
         self.task = Some(task);
     }
 
-    pub fn stop(&mut self) {
-        self.running.store(false, Ordering::SeqCst);
+    pub async fn stop(&mut self) {
+        if let Some(running) = self.running.take() {
+            running.store(false, Ordering::SeqCst);
+        }
         if let Some(task) = self.task.take() {
             task.abort();
         }
+        clear_online_state(&self.online_streamers).await;
     }
+}
+
+async fn clear_online_state(online_streamers: &Arc<Mutex<HashSet<String>>>) {
+    online_streamers.lock().await.clear();
 }
 
 async fn connect_and_process(
@@ -121,7 +135,10 @@ async fn connect_and_process(
 
     let status = response.status();
     if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
-        running.store(false, Ordering::SeqCst);
+        if running.swap(false, Ordering::SeqCst) {
+            clear_online_state(online_streamers).await;
+            crate::update_tray_icon(app_handle, false);
+        }
         return Err(format!("HTTP {} — stopping reconnection", status).into());
     }
     if !status.is_success() {
@@ -241,7 +258,11 @@ async fn handle_event(
 
 #[cfg(test)]
 mod tests {
-    use super::{build_payload, parse_sse_event};
+    use super::{build_payload, parse_sse_event, SseClient};
+    use std::collections::HashSet;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+    use tokio::sync::Mutex;
 
     #[test]
     fn reads_notification_preference_from_event() {
@@ -271,5 +292,21 @@ mod tests {
         assert_eq!(payload.display_name, "Streamer Name");
         assert_eq!(payload.login, "streamer_login");
         assert_eq!(payload.game_name.as_deref(), Some("Game"));
+    }
+
+    #[tokio::test]
+    async fn stopping_clears_the_connection_generation_and_online_state() {
+        let online_streamers = Arc::new(Mutex::new(HashSet::from(["streamer".to_string()])));
+        let running = Arc::new(AtomicBool::new(true));
+        let mut client = SseClient::new(online_streamers.clone());
+        client.running = Some(running.clone());
+        client.task = Some(tokio::spawn(std::future::pending()));
+
+        client.stop().await;
+
+        assert!(!running.load(Ordering::SeqCst));
+        assert!(client.running.is_none());
+        assert!(client.task.is_none());
+        assert!(online_streamers.lock().await.is_empty());
     }
 }

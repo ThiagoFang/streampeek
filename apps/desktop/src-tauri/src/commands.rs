@@ -14,7 +14,7 @@ pub async fn start_sse(
 
     let state = app.state::<AppState>();
     let mut client = state.sse_client.lock().await;
-    client.start(app.clone(), session_id, api_base_url);
+    client.replace(app.clone(), session_id, api_base_url).await;
     Ok(())
 }
 
@@ -22,7 +22,8 @@ pub async fn start_sse(
 pub async fn stop_sse(app: tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<AppState>();
     let mut client = state.sse_client.lock().await;
-    client.stop();
+    client.stop().await;
+    crate::update_tray_icon(&app, false);
     Ok(())
 }
 
