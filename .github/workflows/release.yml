@@ -28,7 +28,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.2"
+          bun-version-file: .bun-version
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -51,9 +51,12 @@ jobs:
       - name: Install JS dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build frontend
+      - name: Lint
+        run: bun run lint
+
+      - name: Test desktop
         working-directory: apps/desktop
-        run: bun run vite build
+        run: bun run test
 
       - name: Build tauri & release
         uses: tauri-apps/tauri-action@v0

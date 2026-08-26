@@ -17,7 +17,7 @@ docker-compose.yml   # Postgres + Redis for local dev
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) 1.2+
+- [Bun](https://bun.sh) 1.2+ (`.bun-version` pins the version used for desktop checks and releases)
 - [Docker](https://www.docker.com/) (for local Postgres + Redis)
 - [Rust toolchain](https://rustup.rs/) (for Tauri)
 - A Twitch app at [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps)
@@ -71,3 +71,16 @@ bun db:migrate:deploy    # prisma migrate deploy (production)
 bun db:generate          # regenerate prisma + kysely types
 bun test                 # bun test (requires postgres + redis running)
 ```
+
+In `apps/desktop`:
+
+```bash
+bun test                 # frontend unit tests (no database or native window needed)
+bun run build            # TypeScript checks + production frontend build
+bun run tauri build      # rebuilds the frontend, then creates the native app and installers
+```
+
+CI runs frontend tests, lint, and the frontend build on Linux and Windows. Releases
+also run lint and frontend tests before building the native app; Tauri runs the
+TypeScript checks and frontend build automatically before packaging. Native
+installation, notifications, and autostart still need manual checks on each OS.
