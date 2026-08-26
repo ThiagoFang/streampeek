@@ -13,11 +13,11 @@ import { Bell, Computer, LogOut, X } from "lucide-react";
 export function Settings() {
   return (
     <Layout>
-      <div className="flex flex-1 flex-col gap-4 px-2 pb-2">
-        <div className="flex flex-1 flex-col gap-4">
+      <div className="flex flex-1 flex-col gap-5 px-3 py-3">
+        <div className="flex flex-1 flex-col gap-5">
           <SettingsToggles />
           <Suspense
-            fallback={<div className="px-4 py-2 text-xs text-muted-foreground">Carregando...</div>}
+            fallback={<div className="px-1 py-2 text-xs text-muted-foreground">Carregando...</div>}
           >
             <SettingsExclusionList />
           </Suspense>
@@ -31,9 +31,12 @@ export function Settings() {
 function SettingsToggles() {
   return (
     <div className="flex flex-col gap-2">
-      <SettingsSectionHeader title="Configurações Gerais" />
-      <NotificationsToggle />
-      <AutostartToggle />
+      <SettingsSectionHeader title="Geral" />
+      <div className="rounded-xl border border-border/70 bg-secondary/35 p-1">
+        <NotificationsToggle />
+        <div className="mx-2 h-px bg-border/60" />
+        <AutostartToggle />
+      </div>
     </div>
   );
 }
@@ -45,25 +48,28 @@ function NotificationsToggle() {
   return (
     <label
       htmlFor="notifications-enabled"
-      className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors hover:bg-accent"
+      className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2.5 transition-colors hover:bg-accent/70"
     >
       <div className="flex items-center gap-2">
-        <Bell aria-hidden="true" className="size-4" />
-        <span className="text-[12px] font-medium">Permitir Notificações</span>
+        <Bell aria-hidden="true" className="size-4 text-muted-foreground" />
+        <span className="text-[13px] font-medium">Permitir notificações</span>
       </div>
       <Switch
         id="notifications-enabled"
         checked={notifications_enabled}
         disabled={isPending}
         onCheckedChange={(checked) => mutate({ notifications_enabled: checked })}
-        size="sm"
       />
     </label>
   );
 }
 
 function SettingsSectionHeader({ title }: { title: string }) {
-  return <h2 className="px-2 text-[12px] font-medium text-muted-foreground">{title}</h2>;
+  return (
+    <h2 className="px-1 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+      {title}
+    </h2>
+  );
 }
 
 function AutostartToggle() {
@@ -93,18 +99,17 @@ function AutostartToggle() {
   return (
     <label
       htmlFor="autostart-enabled"
-      className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-colors hover:bg-accent"
+      className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2.5 transition-colors hover:bg-accent/70"
     >
       <div className="flex items-center gap-2">
-        <Computer aria-hidden="true" className="size-4" />
-        <span className="text-[12px] font-medium">Executar ao iniciar</span>
+        <Computer aria-hidden="true" className="size-4 text-muted-foreground" />
+        <span className="text-[13px] font-medium">Executar ao iniciar</span>
       </div>
       <Switch
         id="autostart-enabled"
         checked={enabled ?? false}
         disabled={enabled === null || isUpdating}
         onCheckedChange={handleChange}
-        size="sm"
       />
     </label>
   );
@@ -118,20 +123,22 @@ function SettingsExclusionList() {
     <div className="flex flex-col gap-2">
       <SettingsSectionHeader title="Streamers silenciados" />
       {exclusionList.length === 0 ? (
-        <span className="px-4 py-2 text-xs text-muted-foreground">Nenhum streamer excluído</span>
+        <span className="rounded-xl border border-border/70 bg-secondary/35 px-3 py-3 text-[12px] text-muted-foreground">
+          Nenhum streamer silenciado
+        </span>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {exclusionList.map((item) => (
             <button
               key={item.broadcaster_id}
               type="button"
               aria-label={`Remover ${item.broadcaster_name} dos streamers silenciados`}
-              className="flex cursor-pointer items-center gap-2 rounded-lg bg-destructive/10 p-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border/70 bg-secondary/60 px-2.5 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isPending}
               onClick={() => mutate({ broadcaster_id: item.broadcaster_id })}
             >
-              <X aria-hidden="true" className="size-3 text-destructive" />
-              <span className="text-xs font-medium text-destructive">{item.broadcaster_name}</span>
+              <X aria-hidden="true" className="size-3" />
+              <span className="text-[12px] font-medium">{item.broadcaster_name}</span>
             </button>
           ))}
         </div>
@@ -151,22 +158,22 @@ function SettingsFooter() {
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="mt-auto flex flex-col border-t border-border/60 pt-2">
       <button
         type="button"
-        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
+        className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent/70"
         onClick={closeApplication}
       >
         <X aria-hidden="true" className="size-4 text-muted-foreground" />
-        <span className="text-[12px] font-medium text-muted-foreground">Fechar Aplicativo</span>
+        <span className="text-[12px] font-medium text-muted-foreground">Fechar aplicativo</span>
       </button>
       <button
         type="button"
-        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
+        className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-destructive/10"
         onClick={() => logout(undefined)}
       >
         <LogOut aria-hidden="true" className="size-4 text-destructive" />
-        <span className="text-[12px] font-medium text-destructive">Desconectar</span>
+        <span className="text-[12px] font-medium text-destructive">Desconectar conta</span>
       </button>
     </div>
   );

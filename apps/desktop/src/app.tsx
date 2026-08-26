@@ -36,10 +36,17 @@ function AuthenticatedApp() {
 
 function AppSkeleton() {
   return (
-    <section className="w-full h-full p-4 flex flex-col">
-      <header className="w-full flex items-center justify-between">
-        <div className="w-3.5 h-3.5 rounded bg-background animate-pulse" />
-        <div className="size-6 rounded-md bg-background animate-pulse" />
+    <section
+      role="status"
+      aria-label="Carregando aplicativo"
+      className="flex h-full w-full flex-col"
+    >
+      <header
+        aria-hidden="true"
+        className="flex w-full items-center justify-between border-b border-border/70 px-3 py-2.5"
+      >
+        <div className="size-7 animate-pulse rounded-lg bg-accent" />
+        <div className="size-7 animate-pulse rounded-lg bg-accent" />
       </header>
     </section>
   );

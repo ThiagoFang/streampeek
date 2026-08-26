@@ -138,8 +138,8 @@ pub fn setup(
                     }
 
                     let scale = win_for_channel.scale_factor().unwrap_or(1.0);
-                    let win_w = (280.0 * scale) as i32;
-                    let win_h = (360.0 * scale) as i32;
+                    let win_w = (crate::WINDOW_WIDTH * scale) as i32;
+                    let win_h = (crate::WINDOW_HEIGHT * scale) as i32;
                     let mut wx = x - (win_w / 2);
                     let mut wy = if y < win_h { y + 32 } else { y - win_h - 32 };
 

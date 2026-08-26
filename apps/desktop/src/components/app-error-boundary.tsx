@@ -25,18 +25,20 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     return (
       <main
         role="alert"
-        className="flex h-full flex-col items-center justify-center gap-3 bg-background p-6 text-center"
+        className="flex h-full flex-col items-center justify-center gap-5 p-6 text-center"
       >
         <img src="/logo_streampeek.png" alt="" className="h-10" />
-        <div className="flex flex-col gap-1">
-          <h1 className="text-sm font-semibold text-foreground">Algo deu errado</h1>
-          <p className="text-xs text-muted-foreground">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-[15px] font-semibold tracking-tight text-foreground">
+            Algo deu errado
+          </h1>
+          <p className="text-[12px] leading-5 text-muted-foreground">
             O StreamPeek encontrou um problema inesperado na interface.
           </p>
         </div>
         <button
           type="button"
-          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={() => window.location.reload()}
         >
           Recarregar aplicativo

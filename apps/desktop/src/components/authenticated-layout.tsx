@@ -7,28 +7,28 @@ function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full flex items-center justify-between bg-background p-2 border-b border-border"
+      className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-border/70 bg-background/96 px-3 py-2.5"
       data-tauri-drag-region=""
     >
       <button
         type="button"
         aria-label="Abrir início"
-        className="flex size-6 cursor-pointer items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex size-7 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => navigate("home")}
       >
-        <img src="/logo_streampeek.png" alt="" className="w-3" />
+        <img src="/logo_streampeek.png" alt="" className="h-[18px] w-auto" />
       </button>
 
       <button
         type="button"
         aria-label="Abrir configurações"
-        className="flex size-6 cursor-pointer items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex size-7 cursor-pointer items-center justify-center rounded-lg transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => navigate("settings")}
       >
         <img
           src={user.profile_image_url}
           alt=""
-          className="size-[18px] rounded-[4px] object-cover"
+          className="size-5 rounded-md object-cover ring-1 ring-border"
         />
       </button>
     </header>

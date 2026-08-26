@@ -7,14 +7,11 @@ interface StatusDotProps {
 
 function StatusDot({ variant, className }: StatusDotProps) {
   if (variant === "offline") {
-    return <div className={cn("size-[5px] rounded-full bg-muted-foreground/40", className)} />;
+    return <div className={cn("size-1.5 rounded-full bg-muted-foreground/35", className)} />;
   }
 
   return (
-    <div className={cn("inline-grid place-items-start", className)}>
-      <div className="col-start-1 row-start-1 size-[7px] rounded-full bg-[#64fd95] opacity-50 blur-[2px]" />
-      <div className="col-start-1 row-start-1 size-[7px] rounded-full bg-[#64fd95]" />
-    </div>
+    <div className={cn("size-1.5 rounded-full bg-live shadow-[0_0_6px_#45d483]", className)} />
   );
 }
 

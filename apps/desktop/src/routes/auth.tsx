@@ -3,7 +3,7 @@ import { useConnect } from "@/hooks/use-connect";
 
 export function Auth() {
   return (
-    <section className="w-full gap-9 h-full p-4 flex flex-col items-center justify-center">
+    <section className="flex h-full w-full flex-col items-center justify-center gap-7 px-6 pb-6">
       <AuthContent />
       <AuthActions />
     </section>
@@ -12,23 +12,20 @@ export function Auth() {
 
 function AuthContent() {
   return (
-    <>
-      <div className="relative">
-        <div className="absolute left-1/2 top-1/2 size-7 -translate-x-1/2 -translate-y-1/2 animate-[logo-breathe_6s_ease-in-out_infinite] rounded-full bg-primary" />
-        <img src="/logo_streampeek.png" alt="Logo StreamPeek" className="w-[30px] h-[46px]" />
+    <div className="flex w-full flex-col items-center gap-5">
+      <div className="flex size-16 items-center justify-center rounded-2xl border border-border bg-secondary">
+        <img src="/logo_streampeek.png" alt="Logo StreamPeek" className="h-9 w-auto" />
       </div>
 
-      <div className="flex flex-col items-center gap-0.5 w-full">
-        <h1 className="text-[16px] font-medium leading-6 text-foreground">
-          Bem vindo ao <b className="font-bold">StreamPeek</b>
-        </h1>
-        <p className="text-[12px] font-light leading-[14px] text-muted-foreground text-center">
-          Acompanhe os seus streamers
+      <div className="flex w-full flex-col items-center gap-2">
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">StreamPeek</h1>
+        <p className="text-center text-[13px] leading-5 text-muted-foreground">
+          Seus streamers favoritos ao vivo.
           <br />
-          favoritos
+          Sem perder o momento.
         </p>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -38,15 +35,15 @@ function AuthActions() {
   return (
     <div className="relative w-full">
       <Button
-        className="w-full cursor-pointer rounded-lg py-1 px-6"
+        className="w-full cursor-pointer rounded-xl px-4 text-[13px]"
         disabled={isConnecting}
         onClick={() => connect(undefined)}
       >
         {isConnecting ? (
           "Conectando..."
         ) : (
-          <span className="text-[12px] font-medium text-foreground">
-            Entrar com <span className="font-semibold">Twitch.tv</span>
+          <span>
+            Entrar com <span className="font-semibold">Twitch</span>
           </span>
         )}
       </Button>
@@ -54,7 +51,7 @@ function AuthActions() {
       {canCancel && (
         <button
           type="button"
-          className="absolute top-full left-1/2 mt-2 -translate-x-1/2 cursor-pointer text-[10px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute top-full left-1/2 mt-3 -translate-x-1/2 cursor-pointer rounded-md px-2 py-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={cancel}
         >
           Cancelar

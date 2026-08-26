@@ -8,27 +8,28 @@
 @layer base {
   :root {
     --primary: #9146ff;
-    --primary-darker: #4900b3;
+    --primary-darker: #7c3aed;
     --primary-foreground: #ffffff;
 
-    --background: #333333;
-    --foreground: #ffffff;
+    --background: #25252b;
+    --foreground: #fafafa;
 
-    --secondary: #1c1c21;
-    --secondary-foreground: #ffffff;
+    --secondary: #2d2d35;
+    --secondary-foreground: #fafafa;
 
-    --muted-foreground: #adafb3;
+    --muted-foreground: #b2b2bd;
 
-    --accent: #454545;
-    --accent-foreground: #ffffff;
+    --accent: #3a3a44;
+    --accent-foreground: #fafafa;
 
     --destructive: #f43f5e;
+    --live: #45d483;
 
-    --border: #515151;
-    --input: #26262c;
-    --ring: #9146ff;
+    --border: #45454f;
+    --input: #3b3b45;
+    --ring: #a970ff;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
   }
 
   * {
@@ -41,12 +42,18 @@
   }
   #root {
     /* The Linux window remains rectangular; this clips our visual surface instead. */
-    @apply h-full overflow-hidden rounded-[8px] border border-border bg-background/98;
-    clip-path: inset(0 round 8px);
+    @apply h-full overflow-hidden rounded-[10px] border border-border/80 bg-background/98;
+    background-image:
+      radial-gradient(ellipse at 12% 0%, rgb(145 70 255 / 3%) 0%, transparent 42%),
+      radial-gradient(ellipse at 90% 100%, rgb(255 255 255 / 7%) 0%, transparent 44%),
+      linear-gradient(155deg, rgb(255 255 255 / 4%) 0%, transparent 48%, rgb(0 0 0 / 7%) 100%);
+    clip-path: inset(0 round 10px);
   }
   body {
     @apply text-foreground;
     font-family: "Inter Variable", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 
@@ -62,6 +69,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-live: var(--live);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -72,16 +80,4 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-@keyframes logo-breathe {
-  0%,
-  100% {
-    opacity: 0.55;
-    filter: blur(28px);
-  }
-  50% {
-    opacity: 1;
-    filter: blur(40px);
-  }
 }

@@ -60,17 +60,19 @@ function OnlineSection({ live, isMuted, isUpdatingMutedState, onToggleMuted }: O
   if (live.length === 0) return null;
 
   return (
-    <section className="flex flex-col border-b border-border">
-      <div className="flex items-center justify-between px-2 py-1">
-        <div className="flex items-center gap-1">
+    <section className="flex flex-col border-b border-border/60">
+      <div className="flex items-center justify-between px-3 pt-3 pb-1.5">
+        <div className="flex items-center gap-1.5">
           <StatusDot variant="online" />
-          <span className="text-[10px] font-medium tracking-[0.5px] text-foreground">ONLINE</span>
+          <span className="text-[11px] font-semibold tracking-[0.08em] text-foreground">
+            ONLINE
+          </span>
         </div>
-        <span className="text-[10px] font-semibold tracking-[0.5px] text-[#64fd95]">
+        <span className="rounded-full bg-live/10 px-1.5 py-0.5 text-[10px] font-semibold text-live">
           {live.length}
         </span>
       </div>
-      <ul className="flex flex-col px-0.5 py-1">
+      <ul className="flex flex-col gap-0.5 px-1.5 pb-2">
         {live.map((streamer) => (
           <HomeStreamerOnline
             key={streamer.id}
@@ -100,20 +102,20 @@ function OfflineSection({
   if (offline.length === 0) return null;
 
   return (
-    <section className="flex flex-col pt-1">
+    <section className="flex flex-col">
       <button
         type="button"
         aria-controls="offline-streamers"
         aria-expanded={section.isExpanded}
-        className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        className="flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         onClick={section.toggle}
       >
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <StatusDot variant="offline" />
-          <span className="text-[10px] font-medium tracking-[0.5px]">OFFLINE</span>
+          <span className="text-[11px] font-semibold tracking-[0.08em]">OFFLINE</span>
         </span>
         <span className="flex items-center gap-1">
-          <span className="text-[10px] font-medium tracking-[0.5px]">{offline.length}</span>
+          <span className="text-[10px] font-medium">{offline.length}</span>
           <ChevronDown
             aria-hidden="true"
             className={`size-3 transition-transform ${section.isExpanded ? "rotate-180" : ""}`}
@@ -122,7 +124,7 @@ function OfflineSection({
       </button>
 
       {section.isExpanded && (
-        <ul id="offline-streamers" className="flex flex-col px-0.5 py-1">
+        <ul id="offline-streamers" className="flex flex-col gap-0.5 px-1.5 pb-2">
           {offline.map((streamer) => (
             <HomeStreamerOffline
               key={streamer.id}

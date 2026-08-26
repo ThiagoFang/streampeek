@@ -12,6 +12,9 @@ use tokio::sync::Mutex;
 
 use sse::SseClient;
 
+pub(crate) const WINDOW_WIDTH: f64 = 300.0;
+pub(crate) const WINDOW_HEIGHT: f64 = 400.0;
+
 pub struct AppState {
     pub(crate) sse_client: Arc<Mutex<SseClient>>,
     pub(crate) online_streamers: Arc<Mutex<HashSet<String>>>,
@@ -96,7 +99,10 @@ fn setup_window(
         let _ = store.save();
     }
 
-    let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize::new(280.0, 360.0)));
+    let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize::new(
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+    )));
 
     win.on_window_event({
         let win = win.clone();
