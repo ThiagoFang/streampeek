@@ -4,6 +4,8 @@ import { useExclusionList, useRemoveExclusion } from "@/hooks/use-exclusion-list
 import { useLogout } from "@/hooks/use-logout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { toggleAutostart } from "@/lib/tauri";
+import { getErrorMessage } from "@/lib/error-message";
+import { Toast } from "@/store/toast";
 import { Switch } from "@/components/ui/switch";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isEnabled } from "@tauri-apps/plugin-autostart";
@@ -68,12 +70,20 @@ function AutostartToggle() {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    isEnabled().then(setEnabled);
+    void isEnabled()
+      .then(setEnabled)
+      .catch((error) => {
+        Toast.error(getErrorMessage(error, "Não foi possível consultar o início automático"));
+      });
   }, []);
 
   const handleChange = async (checked: boolean) => {
-    await toggleAutostart(checked);
-    setEnabled(checked);
+    try {
+      await toggleAutostart(checked);
+      setEnabled(checked);
+    } catch (error) {
+      Toast.error(getErrorMessage(error, "Não foi possível alterar o início automático"));
+    }
   };
 
   return (
@@ -116,17 +126,26 @@ function SettingsExclusionList() {
 
 function SettingsFooter() {
   const { mutate: logout } = useLogout();
+  const closeApplication = () => {
+    void getCurrentWindow()
+      .close()
+      .catch((error) =>
+        Toast.error(getErrorMessage(error, "Não foi possível fechar o aplicativo")),
+      );
+  };
 
   return (
     <div className="flex flex-col">
       <button
+        type="button"
         className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
-        onClick={() => getCurrentWindow().close()}
+        onClick={closeApplication}
       >
         <X className="size-4 text-muted-foreground" />
         <span className="text-[12px] font-medium text-muted-foreground">Fechar Aplicativo</span>
       </button>
       <button
+        type="button"
         className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
         onClick={() => logout(undefined)}
       >

@@ -3,14 +3,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { onAction } from "@tauri-apps/plugin-notification";
 import { envVariables } from "@/lib/env";
+import { getErrorMessage } from "@/lib/error-message";
 import { orpc } from "@/lib/orpc";
 import { SseController } from "@/lib/sse-controller";
 import { openTwitchChannel } from "@/lib/twitch";
 import { useSessionStore } from "@/store/session";
+import { Toast } from "@/store/toast";
 
 function reportSseError(error: unknown, fallback: string) {
-  const message = error instanceof Error && error.message ? error.message : fallback;
+  const message = getErrorMessage(error, fallback);
   console.error(`[SSE] ${message}`, error);
+  Toast.error(message);
 }
 
 export function useStreamEvents() {

@@ -15,12 +15,9 @@ function useConnect() {
 
   const { mutate: connect } = useMutation(
     orpc.auth.getAuthUrl.mutationOptions({
-      onSuccess: ({ url, state }) => {
+      onSuccess: async ({ url, state }) => {
+        await open(url);
         setAuthState(state);
-        open(url);
-      },
-      onError: (error) => {
-        console.error("[useConnect]", error);
       },
     }),
   );
