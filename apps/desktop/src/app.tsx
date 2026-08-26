@@ -1,4 +1,5 @@
 import { AuthErrorBoundary, AuthProvider } from "@/lib/auth";
+import { AutostartOnboarding } from "@/components/autostart-onboarding";
 import { useStreamEvents } from "@/hooks/use-stream-events";
 import { useSessionStore } from "@/store/session";
 import { navigationClient } from "./navigation";
@@ -26,7 +27,11 @@ function AuthenticatedApp() {
   useStreamEvents();
   const path = usePathStore((state) => state.path);
   const Element = navigationClient[path];
-  return <Element />;
+  return (
+    <AutostartOnboarding>
+      <Element />
+    </AutostartOnboarding>
+  );
 }
 
 function AppSkeleton() {

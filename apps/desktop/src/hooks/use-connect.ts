@@ -1,4 +1,5 @@
 import { orpc } from "@/lib/orpc";
+import { AutostartOnboardingPreference } from "@/lib/autostart-onboarding";
 import { usePathStore } from "@/store/path";
 import { useSessionStore } from "@/store/session";
 import { Toast } from "@/store/toast";
@@ -83,6 +84,7 @@ function useConnect() {
     }
 
     activeAuthState.current = null;
+    AutostartOnboardingPreference.request();
     setSessionId(authenticatedSessionId);
     navigate("home");
     setAuthState(null);
