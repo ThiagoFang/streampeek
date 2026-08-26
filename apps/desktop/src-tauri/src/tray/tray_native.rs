@@ -1,5 +1,4 @@
 use tauri::{
-    image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconEvent},
     Manager,
@@ -10,6 +9,9 @@ pub fn setup(
     win: &tauri::WebviewWindow,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let tray = app.tray_by_id("main").expect("tray not found");
+    tray.set_icon(Some(super::square_tray_image(include_bytes!(
+        "../../icons/logo_streampeek_white.png"
+    ))?))?;
 
     let show = MenuItemBuilder::with_id("show", "Mostrar janela").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Sair").build(app)?;

@@ -1,4 +1,3 @@
-import { LavaLampBackground } from "@/components/lava-lamp-background";
 import { useUser } from "@/lib/auth";
 import { usePathStore } from "@/store/path";
 
@@ -43,7 +42,6 @@ interface AuthenticatedLayoutProps extends React.HTMLAttributes<HTMLDivElement> 
 function Layout({ children, ...rest }: AuthenticatedLayoutProps) {
   return (
     <section className="relative w-full h-full overflow-y-auto flex flex-col" {...rest}>
-      <LavaLampBackground />
       <Header />
       {children}
     </section>

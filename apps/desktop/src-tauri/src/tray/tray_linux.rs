@@ -1,4 +1,3 @@
-use image::GenericImageView;
 use ksni::MenuItem;
 use std::sync::OnceLock;
 use tauri::Manager;
@@ -83,12 +82,10 @@ impl ksni::Tray for StreamPeekTray {
 }
 
 fn png_to_ksni_icon(png_bytes: &[u8]) -> ksni::Icon {
-    let img = image::load_from_memory(png_bytes).expect("failed to decode PNG");
-    let (width, height) = img.dimensions();
-    let rgba = img.to_rgba8();
-    let mut argb_data = Vec::with_capacity((width * height * 4) as usize);
+    let image = super::square_tray_image(png_bytes).expect("failed to decode PNG");
+    let mut argb_data = Vec::with_capacity(image.rgba().len());
 
-    for pixel in rgba.chunks_exact(4) {
+    for pixel in image.rgba().chunks_exact(4) {
         argb_data.push(pixel[3]); // A
         argb_data.push(pixel[0]); // R
         argb_data.push(pixel[1]); // G
@@ -96,8 +93,8 @@ fn png_to_ksni_icon(png_bytes: &[u8]) -> ksni::Icon {
     }
 
     ksni::Icon {
-        width: width as i32,
-        height: height as i32,
+        width: image.width() as i32,
+        height: image.height() as i32,
         data: argb_data,
     }
 }

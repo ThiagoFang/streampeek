@@ -209,7 +209,6 @@ async fn update_online_state(
 fn send_notification(
     app_handle: &AppHandle,
     display_name: &str,
-    login: &str,
     game_name: &Option<String>,
 ) {
     let body = game_name
@@ -222,7 +221,6 @@ fn send_notification(
         .builder()
         .title(display_name)
         .body(&body)
-        .extra("login", login)
         .show();
 }
 
@@ -241,7 +239,6 @@ async fn handle_event(
                 send_notification(
                     app_handle,
                     &payload.display_name,
-                    &payload.login,
                     &event.game_name,
                 );
             }

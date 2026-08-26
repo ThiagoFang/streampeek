@@ -3745,7 +3745,6 @@ name = "streampeek-desktop"
 version = "0.1.0"
 dependencies = [
  "futures-util",
- "image",
  "ksni",
  "log",
  "reqwest 0.12.28",
