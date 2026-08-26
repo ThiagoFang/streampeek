@@ -16,11 +16,13 @@ static ICON_WHITE: OnceLock<ksni::Icon> = OnceLock::new();
 static ICON_ACTIVE: OnceLock<ksni::Icon> = OnceLock::new();
 
 fn get_icon_white() -> &'static ksni::Icon {
-    ICON_WHITE.get_or_init(|| png_to_ksni_icon(include_bytes!("../../icons/logo_streampeek_white.png")))
+    ICON_WHITE
+        .get_or_init(|| png_to_ksni_icon(include_bytes!("../../icons/logo_streampeek_white.png")))
 }
 
 fn get_icon_active() -> &'static ksni::Icon {
-    ICON_ACTIVE.get_or_init(|| png_to_ksni_icon(include_bytes!("../../icons/logo_streampeek_active.png")))
+    ICON_ACTIVE
+        .get_or_init(|| png_to_ksni_icon(include_bytes!("../../icons/logo_streampeek_active.png")))
 }
 
 pub struct StreamPeekTray {
@@ -162,11 +164,9 @@ pub fn setup(
                             }
                             Err(e) => {
                                 log::warn!("KWin prepare_move failed: {}", e);
-                                let _ = win_for_channel.set_position(
-                                    tauri::Position::Physical(
-                                        tauri::PhysicalPosition::new(wx, wy),
-                                    ),
-                                );
+                                let _ = win_for_channel.set_position(tauri::Position::Physical(
+                                    tauri::PhysicalPosition::new(wx, wy),
+                                ));
                                 let _ = win_for_channel.show();
                             }
                         }

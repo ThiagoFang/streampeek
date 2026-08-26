@@ -74,7 +74,7 @@ fn setup_window(
 ) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "macos")]
     {
-        use tauri::utils::config::{WindowEffect, WindowEffectsConfig, WindowEffectState};
+        use tauri::utils::config::{WindowEffect, WindowEffectState, WindowEffectsConfig};
         let _ = win.set_effects(Some(WindowEffectsConfig {
             effects: vec![WindowEffect::UnderWindowBackground],
             state: Some(WindowEffectState::Active),

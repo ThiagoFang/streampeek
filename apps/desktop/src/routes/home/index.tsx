@@ -87,4 +87,3 @@ function OfflineFooter({ offline }: { offline: Streamer[] }) {
     </footer>
   );
 }
-

@@ -34,10 +34,8 @@ for (var i = 0; i < existing.length; i++) {{
 }}"#
     );
 
-    let script_path = env::temp_dir().join(format!(
-        "streampeek_kwin_move_{}.js",
-        std::process::id()
-    ));
+    let script_path =
+        env::temp_dir().join(format!("streampeek_kwin_move_{}.js", std::process::id()));
     std::fs::write(&script_path, &script_content)?;
 
     let connection = zbus::Connection::session().await?;
@@ -70,9 +68,6 @@ pub struct KwinScriptGuard {
 impl KwinScriptGuard {
     /// Unload the script after the window has been positioned.
     pub async fn cleanup(self) {
-        let _: Result<bool, _> = self
-            .proxy
-            .call("unloadScript", &("streampeek_move",))
-            .await;
+        let _: Result<bool, _> = self.proxy.call("unloadScript", &("streampeek_move",)).await;
     }
 }

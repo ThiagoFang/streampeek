@@ -7,8 +7,8 @@
 
 @layer base {
   :root {
-    --primary: #9146FF;
-    --primary-darker: #4900B3;
+    --primary: #9146ff;
+    --primary-darker: #4900b3;
     --primary-foreground: #ffffff;
 
     --background: #333333;
@@ -22,7 +22,7 @@
     --accent: #454545;
     --accent-foreground: #ffffff;
 
-    --destructive: #F43F5E;
+    --destructive: #f43f5e;
 
     --border: #515151;
     --input: #26262c;
@@ -35,7 +35,8 @@
     @apply border-border outline-ring/50;
     scrollbar-width: none;
   }
-  html, body {
+  html,
+  body {
     @apply h-screen overflow-hidden;
   }
   #root {
@@ -44,7 +45,7 @@
   body {
     @apply text-foreground rounded-[8px] border border-border;
     background: rgba(51, 51, 51, 0.85);
-    font-family: 'Inter Variable', sans-serif;
+    font-family: "Inter Variable", sans-serif;
   }
 }
 
@@ -73,7 +74,8 @@
 }
 
 @keyframes logo-breathe {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.55;
     filter: blur(28px);
   }
@@ -84,7 +86,8 @@
 }
 
 @keyframes blob-float-1 {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   20% {
@@ -102,7 +105,8 @@
 }
 
 @keyframes blob-float-2 {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   20% {
@@ -120,7 +124,8 @@
 }
 
 @keyframes blob-float-3 {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   20% {

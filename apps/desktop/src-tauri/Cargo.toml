@@ -1,17 +1,15 @@
 [package]
-name = "app"
+name = "streampeek-desktop"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+description = "Desktop client that notifies users when followed Twitch streamers go live"
+repository = "https://github.com/ThiagoFang/streampeek"
 edition = "2021"
 rust-version = "1.77.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "app_lib"
+name = "streampeek_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
