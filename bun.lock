@@ -46,7 +46,6 @@
         "@tauri-apps/plugin-autostart": "^2.5.1",
         "@tauri-apps/plugin-notification": "^2.3.3",
         "@tauri-apps/plugin-shell": "^2",
-        "arktype": "^2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-react": "^0.577.0",

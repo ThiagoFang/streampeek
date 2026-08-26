@@ -1,9 +1,15 @@
-import { type } from "arktype";
+interface EnvVariables {
+  VITE_API_BASE_URL: string;
+}
 
-const envSchema = type({
-  VITE_API_BASE_URL: "string >= 1",
-});
+export function readEnvVariables(env: Record<string, unknown>): EnvVariables {
+  const apiBaseUrl = env.VITE_API_BASE_URL;
 
-export const envVariables = envSchema.assert({
-  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-});
+  if (typeof apiBaseUrl !== "string" || !apiBaseUrl.trim()) {
+    throw new Error("VITE_API_BASE_URL must be a non-empty string");
+  }
+
+  return { VITE_API_BASE_URL: apiBaseUrl };
+}
+
+export const envVariables = readEnvVariables(import.meta.env);
