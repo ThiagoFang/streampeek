@@ -37,14 +37,15 @@
   }
   html,
   body {
-    @apply h-screen overflow-hidden;
+    @apply h-screen overflow-hidden bg-transparent;
   }
   #root {
-    @apply h-full overflow-hidden;
+    /* The Linux window remains rectangular; this clips our visual surface instead. */
+    @apply h-full overflow-hidden rounded-[8px] border border-border bg-background/98;
+    clip-path: inset(0 round 8px);
   }
   body {
-    @apply text-foreground rounded-[8px] border border-border;
-    background: rgba(51, 51, 51, 0.85);
+    @apply text-foreground;
     font-family: "Inter Variable", sans-serif;
   }
 }
