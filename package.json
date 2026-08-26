@@ -10,7 +10,7 @@
     "dev:desktop:windows": "cd apps/desktop && bun run tauri dev",
     "dev:api": "cd apps/api && bun --hot src/server.ts",
     "typecheck": "bun --filter '*' typecheck",
-    "lint": "bun oxlint apps packages",
+    "lint": "bun oxlint --deny-warnings apps packages",
     "format": "bun oxfmt apps packages",
     "format:check": "bun oxfmt --check apps packages",
     "db:up": "docker compose up -d",

@@ -36,15 +36,17 @@ function useConnect() {
     if (isError) setAuthState(null);
   }, [isError]);
 
-  useEffect(() => {
-    if (!data?.authenticated) return;
+  const authenticatedSessionId = data?.authenticated ? data.session_id : null;
 
-    setSessionId(data.session_id);
+  useEffect(() => {
+    if (!authenticatedSessionId) return;
+
+    setSessionId(authenticatedSessionId);
     navigate("home");
     setAuthState(null);
 
     void queryClient.prefetchQuery(orpc.auth.getMe.queryOptions());
-  }, [data?.authenticated]);
+  }, [authenticatedSessionId, navigate, queryClient, setSessionId]);
 
   return { connect, isConnecting: isOpeningAuth || !!authState };
 }
