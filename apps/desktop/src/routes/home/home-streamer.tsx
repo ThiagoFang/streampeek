@@ -1,21 +1,29 @@
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatViewerCount } from "@/lib/format";
 import { openTwitchChannel } from "@/lib/twitch";
+import { cn } from "@/lib/utils";
 import { Streamer } from "@/types/streamer";
-import { User } from "lucide-react";
+import { Bell, BellOff, User } from "lucide-react";
 
-interface HomeStreamerProps {
+interface StreamerProps {
   streamer: Streamer;
 }
 
-function HomeStreamerOnline({ streamer }: HomeStreamerProps) {
+interface HomeStreamerProps extends StreamerProps {
+  isMuted: boolean;
+  isUpdatingMutedState: boolean;
+  onToggleMuted: (streamer: Streamer) => Promise<void>;
+}
+
+function HomeStreamerOnline(props: HomeStreamerProps) {
+  const { streamer } = props;
   const handleClick = () => openTwitchChannel(streamer.channelSlug);
 
   return (
-    <li>
+    <li className="group flex items-center rounded-lg hover:bg-accent">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-1 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-1 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={handleClick}
       >
         <HomeStreamerOnlineAvatar streamer={streamer} />
@@ -34,11 +42,12 @@ function HomeStreamerOnline({ streamer }: HomeStreamerProps) {
           </span>
         </div>
       </button>
+      <NotificationToggle {...props} />
     </li>
   );
 }
 
-function HomeStreamerOnlineAvatar({ streamer }: HomeStreamerProps) {
+function HomeStreamerOnlineAvatar({ streamer }: StreamerProps) {
   return (
     <div className="relative shrink-0">
       <div className="size-7 rounded-full border border-primary p-px">
@@ -53,14 +62,15 @@ function HomeStreamerOnlineAvatar({ streamer }: HomeStreamerProps) {
   );
 }
 
-function HomeStreamerOffline({ streamer }: HomeStreamerProps) {
+function HomeStreamerOffline(props: HomeStreamerProps) {
+  const { streamer } = props;
   const handleClick = () => openTwitchChannel(streamer.channelSlug);
 
   return (
-    <li>
+    <li className="group flex items-center rounded-lg hover:bg-accent">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center gap-2 rounded-lg p-1 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={handleClick}
       >
         <div className="size-[18px] shrink-0 rounded-full border border-border">
@@ -79,7 +89,35 @@ function HomeStreamerOffline({ streamer }: HomeStreamerProps) {
           offline
         </span>
       </button>
+      <NotificationToggle {...props} />
     </li>
+  );
+}
+
+function NotificationToggle({
+  streamer,
+  isMuted,
+  isUpdatingMutedState,
+  onToggleMuted,
+}: HomeStreamerProps) {
+  const Icon = isMuted ? BellOff : Bell;
+  const action = isMuted ? "Reativar" : "Silenciar";
+
+  return (
+    <button
+      type="button"
+      aria-label={`${action} notificações de ${streamer.displayName}`}
+      title={`${action} notificações`}
+      className={cn(
+        "mr-0.5 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-opacity hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-50",
+        !isMuted &&
+          "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100",
+      )}
+      disabled={isUpdatingMutedState}
+      onClick={() => void onToggleMuted(streamer).catch(() => undefined)}
+    >
+      <Icon aria-hidden="true" className="size-3.5" />
+    </button>
   );
 }
 

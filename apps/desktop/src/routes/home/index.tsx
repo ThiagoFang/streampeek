@@ -1,6 +1,7 @@
 import { Layout } from "@/components/authenticated-layout";
 import { StatusDot } from "@/components/ui/status-dot";
 import { useSortedStreamers } from "@/hooks/use-sorted-streamers";
+import { useStreamerNotifications } from "@/hooks/use-streamer-notifications";
 import { Streamer } from "@/types/streamer";
 import { Suspense } from "react";
 import { StreamerListEmpty } from "./home-empty";
@@ -19,6 +20,7 @@ export function Home() {
 
 function StreamerList() {
   const { live, offline } = useSortedStreamers();
+  const notifications = useStreamerNotifications();
 
   if (live.length === 0 && offline.length === 0) {
     return <StreamerListEmpty />;
@@ -26,14 +28,34 @@ function StreamerList() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <OnlineSection live={live} />
-      <OfflineSection offline={offline} />
+      <OnlineSection
+        live={live}
+        isMuted={notifications.isMuted}
+        isUpdatingMutedState={notifications.isUpdating}
+        onToggleMuted={notifications.toggleMuted}
+      />
+      <OfflineSection
+        offline={offline}
+        isMuted={notifications.isMuted}
+        isUpdatingMutedState={notifications.isUpdating}
+        onToggleMuted={notifications.toggleMuted}
+      />
       <OfflineFooter offline={offline} />
     </div>
   );
 }
 
-function OnlineSection({ live }: { live: Streamer[] }) {
+interface StreamerSectionProps {
+  isMuted: (streamerId: string) => boolean;
+  isUpdatingMutedState: (streamerId: string) => boolean;
+  onToggleMuted: (streamer: Streamer) => Promise<void>;
+}
+
+interface OnlineSectionProps extends StreamerSectionProps {
+  live: Streamer[];
+}
+
+function OnlineSection({ live, isMuted, isUpdatingMutedState, onToggleMuted }: OnlineSectionProps) {
   if (live.length === 0) return null;
 
   return (
@@ -49,14 +71,29 @@ function OnlineSection({ live }: { live: Streamer[] }) {
       </div>
       <ul className="flex flex-col px-0.5 py-1">
         {live.map((streamer) => (
-          <HomeStreamerOnline key={streamer.id} streamer={streamer} />
+          <HomeStreamerOnline
+            key={streamer.id}
+            streamer={streamer}
+            isMuted={isMuted(streamer.id)}
+            isUpdatingMutedState={isUpdatingMutedState(streamer.id)}
+            onToggleMuted={onToggleMuted}
+          />
         ))}
       </ul>
     </section>
   );
 }
 
-function OfflineSection({ offline }: { offline: Streamer[] }) {
+interface OfflineSectionProps extends StreamerSectionProps {
+  offline: Streamer[];
+}
+
+function OfflineSection({
+  offline,
+  isMuted,
+  isUpdatingMutedState,
+  onToggleMuted,
+}: OfflineSectionProps) {
   if (offline.length === 0) return null;
 
   return (
@@ -68,7 +105,13 @@ function OfflineSection({ offline }: { offline: Streamer[] }) {
       </div>
       <ul className="flex flex-col px-0.5 py-1">
         {offline.map((streamer) => (
-          <HomeStreamerOffline key={streamer.id} streamer={streamer} />
+          <HomeStreamerOffline
+            key={streamer.id}
+            streamer={streamer}
+            isMuted={isMuted(streamer.id)}
+            isUpdatingMutedState={isUpdatingMutedState(streamer.id)}
+            onToggleMuted={onToggleMuted}
+          />
         ))}
       </ul>
     </section>

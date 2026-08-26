@@ -6,16 +6,28 @@ export function useExclusionList() {
   return data;
 }
 
+export function useAddExclusion() {
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    orpc.notificationExclusion.add.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: orpc.notificationExclusion.list.queryOptions().queryKey,
+        }),
+    }),
+  );
+}
+
 export function useRemoveExclusion() {
   const queryClient = useQueryClient();
 
   return useMutation(
     orpc.notificationExclusion.remove.mutationOptions({
-      onSuccess: () => {
+      onSuccess: () =>
         queryClient.invalidateQueries({
           queryKey: orpc.notificationExclusion.list.queryOptions().queryKey,
-        });
-      },
+        }),
     }),
   );
 }
