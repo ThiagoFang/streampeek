@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "StreamPeek",
   "version": "0.1.0",
-  "identifier": "com.streampeek.app",
+  "identifier": "com.streampeek.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
