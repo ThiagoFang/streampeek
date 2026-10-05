@@ -3,6 +3,8 @@ import { formatViewerCount } from "@/lib/format";
 import { openTwitchChannel } from "@/lib/twitch";
 import { cn } from "@/lib/utils";
 import { Streamer } from "@/types/streamer";
+import { useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Bell, BellOff, Eye } from "lucide-react";
 
 interface StreamerProps {
@@ -17,10 +19,36 @@ interface HomeStreamerProps extends StreamerProps {
 
 function HomeStreamerOnline(props: HomeStreamerProps) {
   const { streamer } = props;
-  const handleClick = () => openTwitchChannel(streamer.channelSlug);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelHover = () => {
+    if (hoverTimer.current !== null) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+  };
+  const markSeen = () => {
+    cancelHover();
+    void invoke("mark_streamer_seen", { login: streamer.channelSlug }).catch(console.error);
+  };
+  useEffect(() => {
+    window.addEventListener("blur", cancelHover);
+    return () => {
+      cancelHover();
+      window.removeEventListener("blur", cancelHover);
+    };
+  }, [streamer.channelSlug]);
+  const handleClick = () => {
+    openTwitchChannel(streamer.channelSlug);
+  };
 
   return (
-    <li className="group flex items-center rounded-xl transition-colors hover:bg-accent/70">
+    <li
+      className="group flex items-center rounded-xl transition-colors hover:bg-accent/70"
+      onMouseEnter={() => {
+        cancelHover();
+        hoverTimer.current = setTimeout(markSeen, 700);
+      }}
+      onMouseLeave={cancelHover}
+      onClickCapture={markSeen}
+    >
       <button
         type="button"
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

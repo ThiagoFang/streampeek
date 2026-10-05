@@ -23,7 +23,7 @@ pub async fn stop_sse(app: tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<AppState>();
     let mut client = state.sse_client.lock().await;
     client.stop().await;
-    crate::update_tray_icon(&app, false);
+    crate::update_tray_icon(&app);
     Ok(())
 }
 
@@ -32,4 +32,12 @@ pub async fn get_online_streamers(app: tauri::AppHandle) -> Result<Vec<String>, 
     let state = app.state::<AppState>();
     let streamers = state.online_streamers.lock().await;
     Ok(streamers.iter().cloned().collect())
+}
+
+#[tauri::command]
+pub async fn mark_streamer_seen(app: tauri::AppHandle, login: String) -> Result<(), String> {
+    let state = app.state::<AppState>();
+    state.unseen_streamers.lock().await.remove(&login);
+    crate::update_tray_icon(&app);
+    Ok(())
 }

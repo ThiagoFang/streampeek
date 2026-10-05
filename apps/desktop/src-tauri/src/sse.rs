@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
@@ -34,14 +34,19 @@ struct StreamerPayload {
 
 pub struct SseClient {
     online_streamers: Arc<Mutex<HashSet<String>>>,
+    unseen_streamers: Arc<Mutex<HashSet<String>>>,
     running: Option<Arc<AtomicBool>>,
     task: Option<JoinHandle<()>>,
 }
 
 impl SseClient {
-    pub fn new(online_streamers: Arc<Mutex<HashSet<String>>>) -> Self {
+    pub fn new(
+        online_streamers: Arc<Mutex<HashSet<String>>>,
+        unseen_streamers: Arc<Mutex<HashSet<String>>>,
+    ) -> Self {
         Self {
             online_streamers,
+            unseen_streamers,
             running: None,
             task: None,
         }
@@ -54,7 +59,7 @@ impl SseClient {
         api_base_url: String,
     ) {
         self.stop().await;
-        crate::update_tray_icon(&app_handle, false);
+        crate::update_tray_icon(&app_handle);
         self.start(app_handle, session_id, api_base_url);
     }
 
@@ -110,6 +115,7 @@ impl SseClient {
             task.abort();
         }
         clear_online_state(&self.online_streamers).await;
+        self.unseen_streamers.lock().await.clear();
     }
 }
 
@@ -137,7 +143,13 @@ async fn connect_and_process(
     if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
         if running.swap(false, Ordering::SeqCst) {
             clear_online_state(online_streamers).await;
-            crate::update_tray_icon(app_handle, false);
+            app_handle
+                .state::<crate::AppState>()
+                .unseen_streamers
+                .lock()
+                .await
+                .clear();
+            crate::update_tray_icon(app_handle);
         }
         return Err(format!("HTTP {} — stopping reconnection", status).into());
     }
@@ -206,11 +218,7 @@ async fn update_online_state(
     !streamers.is_empty()
 }
 
-fn send_notification(
-    app_handle: &AppHandle,
-    display_name: &str,
-    game_name: &Option<String>,
-) {
+fn send_notification(app_handle: &AppHandle, display_name: &str, game_name: &Option<String>) {
     let body = game_name
         .as_ref()
         .map(|g| format!("Entrou ao vivo — {}", g))
@@ -231,23 +239,50 @@ async fn handle_event(
 ) {
     let payload = build_payload(event);
 
+    {
+        let state = app_handle.state::<crate::AppState>();
+        let mut unseen = state.unseen_streamers.lock().await;
+        update_unseen_state(
+            &mut unseen,
+            &payload.login,
+            &event.event_type,
+            event.should_notify,
+        );
+    }
     match event.event_type.as_str() {
         "stream.online" => {
             update_online_state(&payload.login, true, online_streamers).await;
-            crate::update_tray_icon(app_handle, true);
+
             if event.should_notify {
-                send_notification(
-                    app_handle,
-                    &payload.display_name,
-                    &event.game_name,
-                );
+                send_notification(app_handle, &payload.display_name, &event.game_name);
             }
+            crate::update_tray_icon(app_handle);
             let _ = app_handle.emit("streamer-online", &payload);
         }
         "stream.offline" => {
-            let has_online = update_online_state(&payload.login, false, online_streamers).await;
-            crate::update_tray_icon(app_handle, has_online);
+            update_online_state(&payload.login, false, online_streamers).await;
+            crate::update_tray_icon(app_handle);
             let _ = app_handle.emit("streamer-offline", &payload);
+        }
+        _ => {}
+    }
+}
+
+fn update_unseen_state(
+    unseen: &mut HashSet<String>,
+    login: &str,
+    event_type: &str,
+    should_notify: bool,
+) {
+    if login.is_empty() {
+        return;
+    }
+    match event_type {
+        "stream.online" if should_notify => {
+            unseen.insert(login.to_string());
+        }
+        "stream.offline" => {
+            unseen.remove(login);
         }
         _ => {}
     }
@@ -255,11 +290,28 @@ async fn handle_event(
 
 #[cfg(test)]
 mod tests {
-    use super::{build_payload, parse_sse_event, SseClient};
+    use super::{build_payload, parse_sse_event, update_unseen_state, SseClient};
     use std::collections::HashSet;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
     use tokio::sync::Mutex;
+
+    #[test]
+    fn badge_tracks_only_notified_and_unseen_streamers() {
+        let mut unseen = HashSet::new();
+        update_unseen_state(&mut unseen, "muted", "stream.online", false);
+        assert!(unseen.is_empty());
+        update_unseen_state(&mut unseen, "first", "stream.online", true);
+        update_unseen_state(&mut unseen, "second", "stream.online", true);
+        update_unseen_state(&mut unseen, "second", "stream.online", true);
+        assert_eq!(unseen.len(), 2);
+        unseen.remove("first");
+        assert_eq!(unseen, HashSet::from(["second".to_string()]));
+        update_unseen_state(&mut unseen, "second", "stream.offline", false);
+        assert!(unseen.is_empty());
+        update_unseen_state(&mut unseen, "second", "stream.online", true);
+        assert!(unseen.contains("second"));
+    }
 
     #[test]
     fn reads_notification_preference_from_event() {
@@ -295,7 +347,10 @@ mod tests {
     async fn stopping_clears_the_connection_generation_and_online_state() {
         let online_streamers = Arc::new(Mutex::new(HashSet::from(["streamer".to_string()])));
         let running = Arc::new(AtomicBool::new(true));
-        let mut client = SseClient::new(online_streamers.clone());
+        let mut client = SseClient::new(
+            online_streamers.clone(),
+            Arc::new(Mutex::new(HashSet::from(["streamer".to_string()]))),
+        );
         client.running = Some(running.clone());
         client.task = Some(tokio::spawn(std::future::pending()));
 
@@ -305,5 +360,6 @@ mod tests {
         assert!(client.running.is_none());
         assert!(client.task.is_none());
         assert!(online_streamers.lock().await.is_empty());
+        assert!(client.unseen_streamers.lock().await.is_empty());
     }
 }

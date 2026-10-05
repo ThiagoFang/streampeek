@@ -17,6 +17,7 @@ pub(crate) const WINDOW_HEIGHT: f64 = 400.0;
 
 pub struct AppState {
     pub(crate) sse_client: Arc<Mutex<SseClient>>,
+    pub(crate) unseen_streamers: Arc<Mutex<HashSet<String>>>,
     pub(crate) online_streamers: Arc<Mutex<HashSet<String>>>,
     #[cfg(target_os = "linux")]
     pub(crate) ksni_handle: Arc<Mutex<Option<ksni::Handle<tray::StreamPeekTray>>>>,
@@ -30,18 +31,23 @@ impl Default for AppState {
 
 impl AppState {
     pub fn new() -> Self {
+        let unseen_streamers = Arc::new(Mutex::new(HashSet::new()));
         let online_streamers = Arc::new(Mutex::new(HashSet::new()));
         Self {
-            sse_client: Arc::new(Mutex::new(SseClient::new(online_streamers.clone()))),
+            sse_client: Arc::new(Mutex::new(SseClient::new(
+                online_streamers.clone(),
+                unseen_streamers.clone(),
+            ))),
             online_streamers,
+            unseen_streamers,
             #[cfg(target_os = "linux")]
             ksni_handle: Arc::new(Mutex::new(None)),
         }
     }
 }
 
-pub fn update_tray_icon(app: &tauri::AppHandle, has_online: bool) {
-    tray::update_tray_icon(app, has_online);
+pub fn update_tray_icon(app: &tauri::AppHandle) {
+    tray::update_tray_icon(app);
 }
 
 pub fn run() {
@@ -58,6 +64,7 @@ pub fn run() {
             commands::start_sse,
             commands::stop_sse,
             commands::get_online_streamers,
+            commands::mark_streamer_seen,
         ])
         .setup(|app| {
             let win = app.get_webview_window("main").unwrap();

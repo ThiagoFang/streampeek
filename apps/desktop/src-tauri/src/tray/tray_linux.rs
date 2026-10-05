@@ -12,6 +12,7 @@ pub enum TrayAction {
 }
 
 static ICON_WHITE: OnceLock<ksni::Icon> = OnceLock::new();
+static ICON_BADGED: OnceLock<ksni::Icon> = OnceLock::new();
 static ICON_ACTIVE: OnceLock<ksni::Icon> = OnceLock::new();
 
 fn get_icon_white() -> &'static ksni::Icon {
@@ -26,6 +27,7 @@ fn get_icon_active() -> &'static ksni::Icon {
 
 pub struct StreamPeekTray {
     pub has_online: bool,
+    pub has_unseen: bool,
     sender: mpsc::UnboundedSender<TrayAction>,
 }
 
@@ -33,6 +35,7 @@ impl StreamPeekTray {
     pub fn new(sender: mpsc::UnboundedSender<TrayAction>) -> Self {
         Self {
             has_online: false,
+            has_unseen: false,
             sender,
         }
     }
@@ -48,7 +51,13 @@ impl ksni::Tray for StreamPeekTray {
     }
 
     fn icon_pixmap(&self) -> Vec<ksni::Icon> {
-        let icon = if self.has_online {
+        let icon = if self.has_unseen {
+            ICON_BADGED.get_or_init(|| {
+                image_to_ksni_icon(
+                    super::tray_image(true, true).expect("failed to render tray badge"),
+                )
+            })
+        } else if self.has_online {
             get_icon_active()
         } else {
             get_icon_white()
@@ -83,6 +92,10 @@ impl ksni::Tray for StreamPeekTray {
 
 fn png_to_ksni_icon(png_bytes: &[u8]) -> ksni::Icon {
     let image = super::square_tray_image(png_bytes).expect("failed to decode PNG");
+    image_to_ksni_icon(image)
+}
+
+fn image_to_ksni_icon(image: tauri::image::Image<'_>) -> ksni::Icon {
     let mut argb_data = Vec::with_capacity(image.rgba().len());
 
     for pixel in image.rgba().chunks_exact(4) {

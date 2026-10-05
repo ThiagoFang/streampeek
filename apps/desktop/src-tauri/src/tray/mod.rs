@@ -45,43 +45,88 @@ pub fn setup(
     Ok(())
 }
 
-pub fn update_tray_icon(app: &tauri::AppHandle, has_online: bool) {
-    #[cfg(target_os = "linux")]
-    {
+pub fn update_tray_icon(app: &tauri::AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
         let state = app.state::<crate::AppState>();
-        let handle = state.ksni_handle.clone();
-        tokio::spawn(async move {
-            if let Some(h) = handle.lock().await.as_ref() {
-                h.update(move |tray| tray.has_online = has_online).await;
+        // Read the latest state inside the task so rapid events cannot restore an old badge.
+        let online = state.online_streamers.lock().await;
+        let unseen = state.unseen_streamers.lock().await;
+        let has_online = !online.is_empty();
+        let has_unseen = !unseen.is_empty();
+        #[cfg(target_os = "linux")]
+        if let Some(handle) = state.ksni_handle.lock().await.as_ref() {
+            handle
+                .update(move |tray| {
+                    tray.has_online = has_online;
+                    tray.has_unseen = has_unseen;
+                })
+                .await;
+        };
+        #[cfg(not(target_os = "linux"))]
+        if let Some(tray) = app.tray_by_id("main") {
+            if let Ok(image) = tray_image(has_online, has_unseen) {
+                let _ = tray.set_icon(Some(image));
             }
-        });
+        }
+    });
+}
+
+fn tray_image(has_online: bool, has_unseen: bool) -> tauri::Result<tauri::image::Image<'static>> {
+    let bytes: &[u8] = if has_online {
+        include_bytes!("../../icons/logo_streampeek_active.png")
+    } else {
+        include_bytes!("../../icons/logo_streampeek_white.png")
+    };
+    let image = square_tray_image(bytes)?;
+    let mut rgba = image.rgba().to_vec();
+    if has_unseen {
+        paint_badge(&mut rgba, image.width());
     }
+    Ok(tauri::image::Image::new_owned(
+        rgba,
+        image.width(),
+        image.height(),
+    ))
+}
 
-    #[cfg(not(target_os = "linux"))]
-    {
-        let tray = match app.tray_by_id("main") {
-            Some(t) => t,
-            None => return,
-        };
-
-        let icon_bytes = if has_online {
-            include_bytes!("../../icons/logo_streampeek_active.png").to_vec()
-        } else {
-            include_bytes!("../../icons/logo_streampeek_white.png").to_vec()
-        };
-
-        let image = match square_tray_image(&icon_bytes) {
-            Ok(img) => img,
-            Err(_) => return,
-        };
-
-        let _ = tray.set_icon(Some(image));
+fn paint_badge(rgba: &mut [u8], side: u32) {
+    let radius = side as f32 * 0.15;
+    let center = side as f32 - radius - 1.0;
+    for y in 0..side {
+        for x in 0..side {
+            let distance = ((x as f32 - center).powi(2) + (y as f32 - center).powi(2)).sqrt();
+            let color = if distance <= radius * 0.75 {
+                Some([69, 212, 131, 255])
+            } else if distance <= radius {
+                Some([37, 37, 43, 255])
+            } else {
+                None
+            };
+            if let Some(color) = color {
+                let index = ((y * side + x) * 4) as usize;
+                rgba[index..index + 4].copy_from_slice(&color);
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::pad_rgba_to_square;
+    use super::{pad_rgba_to_square, tray_image};
+
+    #[test]
+    fn badge_changes_pixels_without_changing_icon_dimensions() {
+        let plain = tray_image(true, false).unwrap();
+        let badged = tray_image(true, true).unwrap();
+        assert_eq!(plain.width(), badged.width());
+        assert_eq!(plain.height(), badged.height());
+        assert_ne!(plain.rgba(), badged.rgba());
+        assert!(badged
+            .rgba()
+            .chunks_exact(4)
+            .any(|pixel| pixel == [69, 212, 131, 255]));
+    }
 
     #[test]
     fn pads_a_portrait_icon_without_changing_its_pixels() {
