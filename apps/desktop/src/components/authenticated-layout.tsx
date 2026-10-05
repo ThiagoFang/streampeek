@@ -7,7 +7,7 @@ function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-border/70 bg-background/96 px-3 py-2.5"
+      className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-border/70 bg-background/96 p-1.5"
       data-tauri-drag-region=""
     >
       <button

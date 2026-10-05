@@ -48,9 +48,9 @@
       conic-gradient(
         from 48deg at -15% 90%,
         transparent 0deg,
-        rgb(255 255 255 / 2%) 8deg,
-        rgb(255 255 255 / 6%) 22deg,
-        rgb(255 255 255 / 2%) 38deg,
+        rgb(255 255 255 / 1%) 8deg,
+        rgb(255 255 255 / 3%) 22deg,
+        rgb(255 255 255 / 1%) 38deg,
         transparent 50deg
       ),
       linear-gradient(155deg, rgb(255 255 255 / 4%) 0%, transparent 48%, rgb(0 0 0 / 7%) 100%);
