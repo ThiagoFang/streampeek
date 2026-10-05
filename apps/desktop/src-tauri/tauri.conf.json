@@ -31,7 +31,7 @@
     "security": {
       "csp": {
         "default-src": "'self'",
-        "connect-src": "ipc: http://ipc.localhost https://streampeek-production.up.railway.app",
+        "connect-src": "ipc: http://ipc.localhost https://streampeek-api.duckdns.org",
         "font-src": "'self'",
         "img-src": "'self' https://static-cdn.jtvnw.net data: blob:",
         "style-src": "'self'"

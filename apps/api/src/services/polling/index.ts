@@ -30,7 +30,7 @@ const pollProcessor = new PollProcessor({
 export function createPollWorker() {
   return new Worker<PollJobData>("stream-poll", async (job) => pollProcessor.processJob(job), {
     connection: bullMQWorkerConnection,
-    concurrency: 10,
+    concurrency: 2,
   });
 }
 

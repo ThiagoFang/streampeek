@@ -30,16 +30,21 @@ export interface PollProcessorDependencies {
 }
 
 export class PollProcessor {
+  private followedChannels = new Map<string, { channels: FollowedChannel[]; expiresAt: number }>();
   private previousLiveSets = new Map<string, LiveStreamerSet>();
   private initialPollDone = new Set<string>();
   private userLocks = new Map<string, Promise<void>>();
 
-  constructor(private readonly dependencies: PollProcessorDependencies) {}
+  constructor(
+    private readonly dependencies: PollProcessorDependencies,
+    private readonly now: () => number = Date.now,
+  ) {}
 
   resetUser(userId: string) {
     return this.withUserLock(userId, () => {
       this.previousLiveSets.delete(userId);
       this.initialPollDone.delete(userId);
+      this.followedChannels.delete(userId);
     });
   }
 
@@ -62,10 +67,7 @@ export class PollProcessor {
   }
 
   private async loadCurrentLiveSet(context: PollingContext): Promise<LiveStreamerSet> {
-    const channels = await this.dependencies.getFollowedChannels(
-      context.userId,
-      context.accessToken,
-    );
+    const channels = await this.loadFollowedChannels(context);
     if (!channels.length) return new Map();
 
     const broadcasterIds = channels.map((channel) => channel.broadcaster_id);
@@ -92,6 +94,27 @@ export class PollProcessor {
     this.initialPollDone.add(userId);
     this.previousLiveSets.set(userId, currentLiveSet);
     return true;
+  }
+
+  private async loadFollowedChannels(context: PollingContext) {
+    const cached = this.followedChannels.get(context.userId);
+    if (cached && cached.expiresAt > this.now()) return cached.channels;
+
+    const channels = await this.dependencies.getFollowedChannels(
+      context.userId,
+      context.accessToken,
+    );
+    this.followedChannels.delete(context.userId);
+    // Bound the cache even if the service grows beyond the personal deployment.
+    if (this.followedChannels.size >= 100) {
+      const oldest = this.followedChannels.keys().next().value;
+      if (oldest !== undefined) this.followedChannels.delete(oldest);
+    }
+    this.followedChannels.set(context.userId, {
+      channels,
+      expiresAt: this.now() + 10 * 60_000,
+    });
+    return channels;
   }
 
   private async publishEvents(userId: string, events: StreamEvent[]) {

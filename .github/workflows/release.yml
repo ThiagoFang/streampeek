@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 45
 
     env:
-      VITE_API_BASE_URL: https://streampeek-production.up.railway.app
+      VITE_API_BASE_URL: https://streampeek-api.duckdns.org
 
     steps:
       - uses: actions/checkout@v4

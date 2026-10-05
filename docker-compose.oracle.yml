@@ -1,0 +1,67 @@
+name: streampeek
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    mem_limit: 256m
+    logging: *logging
+    environment:
+      POSTGRES_USER: streampeek
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: streampeek
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=30", "-c", "work_mem=2MB", "-c", "maintenance_work_mem=32MB"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U streampeek -d streampeek"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    logging: *logging
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: streampeek-api:oracle
+    command: ["sh", "-c", "bunx prisma migrate deploy --config prisma/prisma.config.ts && exec bun --smol src/server.ts"]
+    restart: unless-stopped
+    mem_limit: 320m
+    logging: *logging
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://streampeek:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/streampeek
+      REDIS_URL: redis://redis:6379
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:?Set TWITCH_CLIENT_ID}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:?Set TWITCH_CLIENT_SECRET}
+      TWITCH_REDIRECT_URI: ${TWITCH_REDIRECT_URI:?Set TWITCH_REDIRECT_URI}
+      CORS_ORIGIN: ${CORS_ORIGIN:-tauri://localhost,https://tauri.localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

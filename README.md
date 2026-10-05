@@ -43,6 +43,50 @@ bun dev:desktop      # Tauri dev (Linux/macOS)
 bun dev:desktop:windows
 ```
 
+## Production (Oracle Micro)
+
+`docker-compose.oracle.yml` runs the API, PostgreSQL and Redis with memory limits
+for a 1 GB VM with 2 GB swap. Database ports are internal; the API binds to
+`127.0.0.1:3000` for a host HTTPS reverse proxy. Logs rotate automatically.
+
+Build the image on an amd64 computer and transfer it to the VM rather than
+building on the Micro instance:
+
+```bash
+docker build -f apps/api/Dockerfile -t streampeek-api:oracle .
+docker save streampeek-api:oracle | gzip > streampeek-api.tar.gz
+# Transfer the archive and load it on the VM:
+gzip -dc streampeek-api.tar.gz | sudo docker load
+```
+
+Copy the Compose file and `.env.oracle.example` to the VM, then copy the example
+to `.env.oracle` and fill in the values. Generate the database password with
+`openssl rand -hex 24` so it is safe to embed in the connection URL. Protect the
+file with `chmod 600 .env.oracle`. Register the HTTPS callback URL in the Twitch
+application and configure DNS, TLS and the reverse proxy before public use.
+
+```bash
+sudo docker compose --env-file .env.oracle -f docker-compose.oracle.yml up -d
+sudo docker compose --env-file .env.oracle -f docker-compose.oracle.yml ps
+curl --fail http://127.0.0.1:3000/health
+```
+
+The memory limits are initial budgets; monitor usage with `sudo docker stats`
+and adjust based on actual workload. Redis uses `noeviction` to preserve queue
+data, so writes fail when its memory budget is full. Back up PostgreSQL before
+upgrades; Docker volumes alone are not backups.
+
+For this small deployment, polling runs at most two jobs concurrently and the
+API uses at most three PostgreSQL connections. Live status is still checked
+every two minutes. Polling caches followed-channel lists for ten minutes
+(at most 100 users), reducing those Twitch requests by about 80% during steady
+polling. New follows/unfollows can take up to ten minutes to affect monitoring;
+the desktop's list queries still fetch current follows. Session invalidation
+clears the corresponding cache. No tokens are stored in this cache.
+The Oracle Compose command uses Bun's `--smol` mode to limit heap growth; this
+trades more frequent garbage collection for lower memory use. It also uses
+`exec` after migrations so the API receives shutdown signals directly.
+
 ## Production (Railway)
 
 The API runs on [Railway](https://railway.com) via the `apps/api/Dockerfile`:

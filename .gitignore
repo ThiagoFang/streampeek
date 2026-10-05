@@ -11,6 +11,7 @@ src-tauri/target
 
 # Environment
 .env
+.env.oracle
 *.local
 
 # Database

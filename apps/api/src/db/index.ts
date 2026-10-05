@@ -6,7 +6,8 @@ import { envVariables } from "../lib/env";
 const dialect = new PostgresDialect({
   pool: new PG.Pool({
     connectionString: envVariables.DATABASE_URL,
-    max: 10,
+    max: 3,
+    idleTimeoutMillis: 30_000,
   }),
 });
 
