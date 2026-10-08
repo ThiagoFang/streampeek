@@ -51,6 +51,13 @@ pub fn update_tray_icon(app: &tauri::AppHandle) {
 }
 
 pub fn run() {
+    // Apply the same WebKit workaround used by dev:desktop before GTK starts.
+    // The DMABUF renderer can terminate the process when showing a Wayland window.
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
