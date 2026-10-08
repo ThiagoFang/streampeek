@@ -1,6 +1,6 @@
 [package]
 name = "streampeek-desktop"
-version = "0.1.1"
+version = "0.1.2"
 description = "Desktop client that notifies users when followed Twitch streamers go live"
 repository = "https://github.com/ThiagoFang/streampeek"
 edition = "2021"
