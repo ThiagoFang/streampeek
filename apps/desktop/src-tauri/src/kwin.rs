@@ -24,6 +24,7 @@ pub async fn prepare_move(
     let script_content = format!(
         r#"function tryMove(client) {{
     if (client.caption === "{WINDOW_CAPTION}") {{
+        client.skipTaskbar = true;
         client.frameGeometry = {{ x: {x}, y: {y}, width: {width}, height: {height} }};
     }}
 }}
