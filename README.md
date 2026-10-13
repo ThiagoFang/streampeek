@@ -93,7 +93,7 @@ The API runs on [Railway](https://railway.com) via the `apps/api/Dockerfile`:
 
 - Builder: **Dockerfile** with path `apps/api/Dockerfile`
 - Postgres + Redis added as services; reference `${{Postgres.DATABASE_URL}}` and `${{Redis.REDIS_URL}}` in the API service variables
-- Required env vars: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI` (production callback URL), `CORS_ORIGIN` (comma-separated list including `tauri://localhost,https://tauri.localhost`)
+- Required env vars: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI` (production callback URL), `CORS_ORIGIN` (comma-separated list including `tauri://localhost,http://tauri.localhost,https://tauri.localhost`)
 - `prisma migrate deploy` runs automatically on container start
 
 The desktop app points to the production API by setting `VITE_API_BASE_URL` in `apps/desktop/.env` before building the Tauri bundle.

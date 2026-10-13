@@ -55,7 +55,7 @@ services:
       TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:?Set TWITCH_CLIENT_ID}
       TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:?Set TWITCH_CLIENT_SECRET}
       TWITCH_REDIRECT_URI: ${TWITCH_REDIRECT_URI:?Set TWITCH_REDIRECT_URI}
-      CORS_ORIGIN: ${CORS_ORIGIN:-tauri://localhost,https://tauri.localhost}
+      CORS_ORIGIN: ${CORS_ORIGIN:-tauri://localhost,http://tauri.localhost,https://tauri.localhost}
     depends_on:
       postgres:
         condition: service_healthy

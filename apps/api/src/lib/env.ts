@@ -22,6 +22,7 @@ export const envVariables = envSchema.assert({
   TWITCH_REDIRECT_URI: Bun.env.TWITCH_REDIRECT_URI ?? "http://localhost:3000/auth/twitch/callback",
   DATABASE_URL: Bun.env.DATABASE_URL,
   CORS_ORIGIN:
-    Bun.env.CORS_ORIGIN ?? "http://localhost:1420,tauri://localhost,https://tauri.localhost",
+    Bun.env.CORS_ORIGIN ??
+    "http://localhost:1420,tauri://localhost,http://tauri.localhost,https://tauri.localhost",
   REDIS_URL: Bun.env.REDIS_URL ?? "redis://localhost:6379",
 });

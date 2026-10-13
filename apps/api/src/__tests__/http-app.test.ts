@@ -84,6 +84,28 @@ describe("HTTP app", () => {
     expect(response.headers.get("Access-Control-Allow-Credentials")).toBe("true");
   });
 
+  it("allows Windows desktop login preflight without allowing unrelated origins", async () => {
+    const harness = createHarness({
+      corsOrigins: ["tauri://localhost", "http://tauri.localhost", "https://tauri.localhost"],
+    });
+    const preflight = (origin: string) =>
+      harness.app.request("/rpc/auth/getAuthUrl", {
+        method: "OPTIONS",
+        headers: {
+          Origin: origin,
+          "Access-Control-Request-Method": "POST",
+          "Access-Control-Request-Headers": "content-type,authorization",
+        },
+      });
+    const response = await preflight("http://tauri.localhost");
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("http://tauri.localhost");
+    expect(response.headers.get("Access-Control-Allow-Headers")).toContain("content-type");
+    expect(
+      (await preflight("https://untrusted.example")).headers.get("Access-Control-Allow-Origin"),
+    ).toBeNull();
+  });
+
   it("turns invalid input into a client error", async () => {
     const schema = type({ required: "string" });
     const harness = createHarness({
