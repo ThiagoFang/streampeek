@@ -41,9 +41,17 @@
     @apply h-screen overflow-hidden bg-transparent;
   }
   #root {
-    /* The Linux window remains rectangular; this clips our visual surface instead. */
+    /* Rounded overflow clips the surface without an additional clip-path. */
     @apply h-full overflow-hidden rounded-[10px] border border-border/80 bg-background/95;
-    clip-path: inset(0 round 10px);
+  }
+  /* Match the opaque, rectangular native Linux window all the way to its edges. */
+  html[data-platform="linux"],
+  html[data-platform="linux"] body,
+  html[data-platform="linux"] #root {
+    background-color: var(--background);
+  }
+  html[data-platform="linux"] #root {
+    border-radius: 0;
   }
   body {
     @apply text-foreground;

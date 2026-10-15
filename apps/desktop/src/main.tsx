@@ -8,6 +8,8 @@ import { createAppQueryClient } from "./lib/query-client";
 import { Toast } from "./store/toast";
 import "./globals.css";
 
+document.documentElement.dataset.platform = import.meta.env.TAURI_ENV_PLATFORM;
+
 const queryClient = createAppQueryClient({ showError: Toast.error });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

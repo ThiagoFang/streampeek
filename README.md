@@ -98,6 +98,12 @@ The API runs on [Railway](https://railway.com) via the `apps/api/Dockerfile`:
 
 The desktop app points to the production API by setting `VITE_API_BASE_URL` in `apps/desktop/.env` before building the Tauri bundle.
 
+On Linux, `src-tauri/tauri.linux.conf.json` uses an opaque dark window to avoid
+WebKitGTK repaint artifacts where hovering leaves only the updated region visible.
+This disables background translucency and transparent outer corners on Linux.
+The platform override repeats the window settings because Tauri replaces the
+`windows` array when merging configuration files.
+
 ## Scripts
 
 ```bash

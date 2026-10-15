@@ -7,6 +7,11 @@ const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    "import.meta.env.TAURI_ENV_PLATFORM": JSON.stringify(
+      process.env.TAURI_ENV_PLATFORM ?? process.platform,
+    ),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
