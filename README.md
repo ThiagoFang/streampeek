@@ -1,136 +1,105 @@
-# StreamPeek
+<p align="center">
+  <img src="apps/desktop/public/logo_streampeek.png" alt="StreamPeek logo" width="96" />
+</p>
 
-Desktop app that notifies you when streamers you follow on Twitch go live.
+<h1 align="center">StreamPeek</h1>
+<p align="center">A desktop companion for keeping up with followed Twitch streamers.</p>
 
-- **Desktop** — Tauri 2 + React 19 + Vite + Tailwind
-- **API** — Bun + Hono + ORPC + Prisma + Kysely + BullMQ
-- **Infra** — PostgreSQL + Redis
+> **Retired — November 2026.** This repository is preserved as a portfolio project and source reference. Development and hosted-service support have ended. No new releases, fixes, or support are planned. Historical binaries may still point to the former API; use the source with your own local backend to explore the app.
 
-## Repo layout
+## What it does
 
+StreamPeek lives in the system tray and shows which followed Twitch channels are live, with desktop notifications when a stream starts. It combines a compact native desktop shell with a backend that handles Twitch authentication, polls live status, and pushes events to connected clients.
+
+- Sign in with Twitch and browse followed channels, grouped by live status.
+- Open a channel on Twitch directly from the app.
+- Enable or disable notifications, and mute individual channels.
+- Keep the app in the tray and optionally launch it at login.
+- Restore sessions and reconnect to the event stream.
+
+## Architecture
+
+```text
+Tauri + React desktop
+  │  RPC requests / server-sent events
+  ▼
+Bun + Hono API ─────────────── Twitch OAuth + Helix API
+  ├── PostgreSQL: sessions, settings, notification exclusions
+  └── Redis + BullMQ: polling jobs and event distribution
 ```
-apps/
-  api/        # Bun + Hono backend (ORPC, Twitch polling, SSE)
-  desktop/    # Tauri + React frontend
-docker-compose.yml   # Postgres + Redis for local dev
+
+| Layer | Technologies | Responsibility |
+| --- | --- | --- |
+| Desktop UI | React 19, TypeScript, Vite, Tailwind CSS, TanStack Query, Zustand | Channel list, authentication flow, preferences |
+| Native shell | Tauri 2, Rust | Tray, notifications, autostart, SSE connection |
+| API | Bun, Hono, oRPC, ArkType | Typed RPC, OAuth, sessions, rate limiting |
+| Persistence | PostgreSQL, Prisma migrations, Kysely | Schema management and typed queries |
+| Background work | Redis, BullMQ | Scheduled Twitch polling and live events |
+
+The backend separates application lifecycle, session handling, polling policy, and transport adapters. Tests cover these boundaries alongside frontend preferences and event handling. Native tray code has separate Linux and other-platform implementations; Linux also has a window configuration override for WebKitGTK rendering.
+
+## Repository
+
+```text
+apps/api/
+  prisma/                   Database schema and migrations
+  src/rpc/                  RPC procedures
+  src/routes/               OAuth callback, SSE, health endpoint
+  src/services/             Authentication, sessions, polling, Twitch client
+  src/__tests__/            Unit and integration tests
+apps/desktop/
+  src/                      React UI, hooks, state, frontend tests
+  src-tauri/                Rust shell, tray, notifications, SSE
+.github/workflows/ci.yml     Source checks; release automation was retired
 ```
 
-## Prerequisites
+## Explore locally
 
-- [Bun](https://bun.sh) 1.2+ (`.bun-version` pins the version used for desktop checks and releases)
-- [Docker](https://www.docker.com/) (for local Postgres + Redis)
-- [Rust toolchain](https://rustup.rs/) (for Tauri)
-- A Twitch app at [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps)
+The source is preserved for study and local experimentation. It requires your own Twitch application credentials; there is no supported public backend.
 
-## Local setup
+Prerequisites: Bun (version pinned in `.bun-version`), Docker Compose, Rust, and the native development libraries required by Tauri 2 for your OS. Native behavior was developed for Linux and Windows; other platforms are unverified.
+
+From the repository root:
 
 ```bash
-bun install
-bun db:up                                # postgres + redis via docker
-cp apps/api/.env.example apps/api/.env   # fill TWITCH_CLIENT_ID/SECRET
+bun install --frozen-lockfile
+cp apps/api/.env.example apps/api/.env
 cp apps/desktop/.env.example apps/desktop/.env
-
-cd apps/api && bun db:migrate            # apply prisma migrations
+bun db:up
 ```
 
-Register `http://localhost:3000/auth/twitch/callback` in the Twitch app's OAuth Redirect URLs.
-
-## Run
+In `apps/api/.env`, fill in `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` from your own Twitch application. Register `http://localhost:3000/auth/twitch/callback` as its OAuth redirect URL. The example database credentials are for local development only; database and Redis ports bind to loopback.
 
 ```bash
-bun dev:api          # API on :3000
-bun dev:desktop      # Tauri dev (Linux/macOS)
-bun dev:desktop:windows
+cd apps/api
+bun db:generate
+bun db:migrate:deploy
 ```
 
-## Production (Oracle Micro)
-
-`docker-compose.oracle.yml` runs the API, PostgreSQL and Redis with memory limits
-for a 1 GB VM with 2 GB swap. Database ports are internal; the API binds to
-`127.0.0.1:3000` for a host HTTPS reverse proxy. Logs rotate automatically.
-
-Build the image on an amd64 computer and transfer it to the VM rather than
-building on the Micro instance:
+Then, in separate terminals from the repository root:
 
 ```bash
-docker build -f apps/api/Dockerfile -t streampeek-api:oracle .
-docker save streampeek-api:oracle | gzip > streampeek-api.tar.gz
-# Transfer the archive and load it on the VM:
-gzip -dc streampeek-api.tar.gz | sudo docker load
+bun dev:api
+bun dev:desktop           # Linux; also sets a WebKit renderer workaround
+# Windows: bun dev:desktop:windows
 ```
 
-Copy the Compose file and `.env.oracle.example` to the VM, then copy the example
-to `.env.oracle` and fill in the values. Generate the database password with
-`openssl rand -hex 24` so it is safe to embed in the connection URL. Protect the
-file with `chmod 600 .env.oracle`. Register the HTTPS callback URL in the Twitch
-application and configure DNS, TLS and the reverse proxy before public use.
+The desktop example and packaged CSP target `http://localhost:3000`. For a different backend, change both `VITE_API_BASE_URL` and `app.security.csp.connect-src` in `apps/desktop/src-tauri/tauri.conf.json` before building.
+
+## Verification
 
 ```bash
-sudo docker compose --env-file .env.oracle -f docker-compose.oracle.yml up -d
-sudo docker compose --env-file .env.oracle -f docker-compose.oracle.yml ps
-curl --fail http://127.0.0.1:3000/health
+bun typecheck
+bun lint
+cd apps/desktop
+bun test
+bun run build
 ```
 
-The memory limits are initial budgets; monitor usage with `sudo docker stats`
-and adjust based on actual workload. Redis uses `noeviction` to preserve queue
-data, so writes fail when its memory budget is full. Back up PostgreSQL before
-upgrades; Docker volumes alone are not backups.
+API tests run with `cd apps/api && bun test`. Integration tests require a migrated, disposable PostgreSQL database and Redis instance configured through the API environment. They write and clean up test data; do not point them at a production database.
 
-For this small deployment, polling runs at most two jobs concurrently and the
-API uses at most three PostgreSQL connections. Live status is still checked
-every two minutes. Polling caches followed-channel lists for ten minutes
-(at most 100 users), reducing those Twitch requests by about 80% during steady
-polling. New follows/unfollows can take up to ten minutes to affect monitoring;
-the desktop's list queries still fetch current follows. Session invalidation
-clears the corresponding cache. No tokens are stored in this cache.
-The Oracle Compose command uses Bun's `--smol` mode to limit heap growth; this
-trades more frequent garbage collection for lower memory use. It also uses
-`exec` after migrations so the API receives shutdown signals directly.
+CI checks the frontend on Linux and Windows, and typechecks and tests the API with isolated PostgreSQL and Redis services. Native installers, notifications, tray behavior, and autostart require manual OS testing.
 
-## Production (Railway)
+## Retirement notes
 
-The API runs on [Railway](https://railway.com) via the `apps/api/Dockerfile`:
-
-- Builder: **Dockerfile** with path `apps/api/Dockerfile`
-- Postgres + Redis added as services; reference `${{Postgres.DATABASE_URL}}` and `${{Redis.REDIS_URL}}` in the API service variables
-- Required env vars: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_REDIRECT_URI` (production callback URL), `CORS_ORIGIN` (comma-separated list including `tauri://localhost,http://tauri.localhost,https://tauri.localhost`)
-- `prisma migrate deploy` runs automatically on container start
-
-The desktop app points to the production API by setting `VITE_API_BASE_URL` in `apps/desktop/.env` before building the Tauri bundle.
-
-On Linux, `src-tauri/tauri.linux.conf.json` uses an opaque dark window to avoid
-WebKitGTK repaint artifacts where hovering leaves only the updated region visible.
-This disables background translucency and transparent outer corners on Linux.
-The platform override repeats the window settings because Tauri replaces the
-`windows` array when merging configuration files.
-
-## Scripts
-
-```bash
-bun typecheck        # workspace-wide
-bun lint             # oxlint
-bun format           # oxfmt
-bun db:up / db:down  # postgres + redis containers
-```
-
-In `apps/api`:
-
-```bash
-bun db:migrate           # prisma migrate dev (creates new migration)
-bun db:migrate:deploy    # prisma migrate deploy (production)
-bun db:generate          # regenerate prisma + kysely types
-bun test                 # bun test (requires postgres + redis running)
-```
-
-In `apps/desktop`:
-
-```bash
-bun test                 # frontend unit tests (no database or native window needed)
-bun run build            # TypeScript checks + production frontend build
-bun run tauri build      # rebuilds the frontend, then creates the native app and installers
-```
-
-CI runs frontend tests, lint, and the frontend build on Linux and Windows. Releases
-also run lint and frontend tests before building the native app; Tauri runs the
-TypeScript checks and frontend build automatically before packaging. Native
-installation, notifications, and autostart still need manual checks on each OS.
+Production deployment files and automated releases have been removed. The generic API Dockerfile remains as a source reference. Local environment files, credentials, and build artifacts are excluded from Git and Docker contexts. No license is currently declared in this repository.

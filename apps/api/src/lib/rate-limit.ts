@@ -41,7 +41,7 @@ export async function consumeRateLimit(key: string): Promise<RateLimitDecision> 
 }
 
 export function getClientKey(headers: Headers): string {
-  // Production runs behind Railway, which supplies X-Real-IP. Authorization and
+  // A trusted reverse proxy must overwrite X-Real-IP. Authorization and
   // X-Forwarded-For are client-controlled at this point and must not identify the limiter.
   const realIp = headers.get("x-real-ip")?.trim();
   return `ip:${realIp && isIP(realIp) ? realIp : "unknown"}`;

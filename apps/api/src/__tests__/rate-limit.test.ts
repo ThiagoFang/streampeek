@@ -56,7 +56,7 @@ describe("rate-limit", () => {
 });
 
 describe("getClientKey", () => {
-  it("uses the client IP supplied by Railway", () => {
+  it("uses the client IP supplied by the reverse proxy", () => {
     const headers = new Headers({ "x-real-ip": "5.6.7.8" });
     expect(getClientKey(headers)).toBe("ip:5.6.7.8");
   });
@@ -80,7 +80,7 @@ describe("getClientKey", () => {
     expect(getClientKey(headers)).toBe("ip:unknown");
   });
 
-  it("falls back to a shared key outside Railway", () => {
+  it("falls back to a shared key when the client IP is missing", () => {
     expect(getClientKey(new Headers())).toBe("ip:unknown");
   });
 });

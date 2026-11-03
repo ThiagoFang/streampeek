@@ -8,7 +8,7 @@ const SESSION_RETENTION_MS = 30 * DAY_MS;
 const CLEANUP_INTERVAL_MS = DAY_MS;
 const logger = createLogger({ component: "session-cleanup" });
 
-export const SessionCleanup = createSessionCleanup({
+const SessionCleanup = createSessionCleanup({
   findExpiredBefore: DbAuthToken.getExpiredBefore,
   deleteSession: AuthSession.delete,
   now: () => Date.now(),

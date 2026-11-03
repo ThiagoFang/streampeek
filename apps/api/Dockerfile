@@ -2,21 +2,21 @@
 # Build context = monorepo root (so we can use the workspace bun.lock)
 # Build with: docker build -f apps/api/Dockerfile -t streampeek-api .
 
-FROM oven/bun:1.2-slim AS deps
+FROM oven/bun:1.3.13-slim AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/desktop/package.json ./apps/desktop/
 RUN bun install --frozen-lockfile --filter @streampeek/api
 
-FROM oven/bun:1.2-slim AS build
+FROM oven/bun:1.3.13-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json bun.lock tsconfig.base.json ./
 COPY apps/api ./apps/api
 RUN cd apps/api && bunx prisma generate --config prisma/prisma.config.ts
 
-FROM oven/bun:1.2-slim AS release
+FROM oven/bun:1.3.13-slim AS release
 WORKDIR /app
 ENV NODE_ENV=production
 # OpenSSL is required by Prisma's query engine

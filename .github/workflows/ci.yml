@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   desktop:
     name: Desktop checks (${{ matrix.platform }})
@@ -16,7 +19,7 @@ jobs:
     timeout-minutes: 15
 
     env:
-      VITE_API_BASE_URL: https://streampeek-api.duckdns.org
+      VITE_API_BASE_URL: http://localhost:3000
 
     steps:
       - uses: actions/checkout@v4
@@ -82,7 +85,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.2"
+          bun-version-file: .bun-version
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
